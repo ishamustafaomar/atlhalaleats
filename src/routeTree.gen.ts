@@ -9,9 +9,17 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as PollsRouteImport } from './routes/polls'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as RestaurantIdRouteImport } from './routes/restaurant.$id'
+import { Route as PollsSlugRouteImport } from './routes/polls.$slug'
+import { Route as AdminPollsRouteImport } from './routes/admin.polls'
 
+const PollsRoute = PollsRouteImport.update({
+  id: '/polls',
+  path: '/polls',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -22,35 +30,74 @@ const RestaurantIdRoute = RestaurantIdRouteImport.update({
   path: '/restaurant/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PollsSlugRoute = PollsSlugRouteImport.update({
+  id: '/$slug',
+  path: '/$slug',
+  getParentRoute: () => PollsRoute,
+} as any)
+const AdminPollsRoute = AdminPollsRouteImport.update({
+  id: '/admin/polls',
+  path: '/admin/polls',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/polls': typeof PollsRouteWithChildren
+  '/admin/polls': typeof AdminPollsRoute
+  '/polls/$slug': typeof PollsSlugRoute
   '/restaurant/$id': typeof RestaurantIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/polls': typeof PollsRouteWithChildren
+  '/admin/polls': typeof AdminPollsRoute
+  '/polls/$slug': typeof PollsSlugRoute
   '/restaurant/$id': typeof RestaurantIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/polls': typeof PollsRouteWithChildren
+  '/admin/polls': typeof AdminPollsRoute
+  '/polls/$slug': typeof PollsSlugRoute
   '/restaurant/$id': typeof RestaurantIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/restaurant/$id'
+  fullPaths:
+    | '/'
+    | '/polls'
+    | '/admin/polls'
+    | '/polls/$slug'
+    | '/restaurant/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/restaurant/$id'
-  id: '__root__' | '/' | '/restaurant/$id'
+  to: '/' | '/polls' | '/admin/polls' | '/polls/$slug' | '/restaurant/$id'
+  id:
+    | '__root__'
+    | '/'
+    | '/polls'
+    | '/admin/polls'
+    | '/polls/$slug'
+    | '/restaurant/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  PollsRoute: typeof PollsRouteWithChildren
+  AdminPollsRoute: typeof AdminPollsRoute
   RestaurantIdRoute: typeof RestaurantIdRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/polls': {
+      id: '/polls'
+      path: '/polls'
+      fullPath: '/polls'
+      preLoaderRoute: typeof PollsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -65,11 +112,37 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RestaurantIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/polls/$slug': {
+      id: '/polls/$slug'
+      path: '/$slug'
+      fullPath: '/polls/$slug'
+      preLoaderRoute: typeof PollsSlugRouteImport
+      parentRoute: typeof PollsRoute
+    }
+    '/admin/polls': {
+      id: '/admin/polls'
+      path: '/admin/polls'
+      fullPath: '/admin/polls'
+      preLoaderRoute: typeof AdminPollsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
+interface PollsRouteChildren {
+  PollsSlugRoute: typeof PollsSlugRoute
+}
+
+const PollsRouteChildren: PollsRouteChildren = {
+  PollsSlugRoute: PollsSlugRoute,
+}
+
+const PollsRouteWithChildren = PollsRoute._addFileChildren(PollsRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  PollsRoute: PollsRouteWithChildren,
+  AdminPollsRoute: AdminPollsRoute,
   RestaurantIdRoute: RestaurantIdRoute,
 }
 export const routeTree = rootRouteImport
