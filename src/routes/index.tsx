@@ -17,7 +17,10 @@ import {
   Clock,
   Trophy,
   ChevronRight,
+  Navigation,
+  Loader2,
 } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { AddRestaurantDialog } from "@/components/AddRestaurantDialog";
 import { useAuth } from "@/lib/auth";
@@ -33,6 +36,7 @@ const SORT_OPTIONS = [
   { value: "top", label: "Highest rated", icon: Trophy },
   { value: "popular", label: "Most reviewed", icon: TrendingUp },
   { value: "newest", label: "Newest", icon: Clock },
+  { value: "near", label: "Nearest to me", icon: Navigation },
   { value: "name", label: "A → Z", icon: ArrowUpDown },
 ] as const;
 
@@ -40,7 +44,7 @@ type SortKey = (typeof SORT_OPTIONS)[number]["value"];
 
 const searchSchema = z.object({
   q: fallback(z.string(), "").default(""),
-  sort: fallback(z.enum(["top", "popular", "newest", "name"]), "popular").default("popular"),
+  sort: fallback(z.enum(["top", "popular", "newest", "near", "name"]), "popular").default("popular"),
   cuisine: fallback(z.string(), "").default(""),
 });
 
@@ -58,7 +62,27 @@ type Restaurant = {
   avg_rating: number | null;
   review_count: number | null;
   created_at: string;
+  latitude: number | null;
+  longitude: number | null;
+  address: string | null;
 };
+
+// Haversine distance in kilometers
+function distanceKm(
+  lat1: number,
+  lon1: number,
+  lat2: number,
+  lon2: number,
+): number {
+  const R = 6371;
+  const toRad = (d: number) => (d * Math.PI) / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(a));
+}
 
 // Smart category system. Each category matches restaurants by keywords found in
 // either the cuisine field or the restaurant name. Order matters — more specific
@@ -146,6 +170,8 @@ function Index() {
   const [addOpen, setAddOpen] = useState(false);
   const { user, signInWithGoogle } = useAuth();
   const [localQ, setLocalQ] = useState(q);
+  const [userLoc, setUserLoc] = useState<{ lat: number; lon: number } | null>(null);
+  const [locLoading, setLocLoading] = useState(false);
 
   useEffect(() => {
     setLocalQ(q);
@@ -164,9 +190,45 @@ function Index() {
     setLoading(true);
     const { data } = await supabase
       .from("restaurants")
-      .select("id,name,cuisine,google_rating,note,avg_rating,review_count,created_at");
+      .select(
+        "id,name,cuisine,google_rating,note,avg_rating,review_count,created_at,latitude,longitude,address",
+      );
     setRestaurants((data ?? []) as Restaurant[]);
     setLoading(false);
+  };
+
+  const requestLocation = (thenSortNear = true) => {
+    if (!("geolocation" in navigator)) {
+      toast.error("Geolocation isn't supported on this device.");
+      return;
+    }
+    setLocLoading(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setUserLoc({ lat: pos.coords.latitude, lon: pos.coords.longitude });
+        setLocLoading(false);
+        toast.success("Location set — showing nearest spots.");
+        if (thenSortNear) {
+          navigate({ search: { q, sort: "near", cuisine }, replace: true });
+        }
+      },
+      (err) => {
+        setLocLoading(false);
+        toast.error(
+          err.code === err.PERMISSION_DENIED
+            ? "Location permission denied."
+            : "Couldn't get your location.",
+        );
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 },
+    );
+  };
+
+  const clearLocation = () => {
+    setUserLoc(null);
+    if (sort === "near") {
+      navigate({ search: { q, sort: "popular", cuisine }, replace: true });
+    }
   };
 
   useEffect(() => {
@@ -193,9 +255,21 @@ function Index() {
       .slice(0, 8);
   }, [restaurants]);
 
+  // Decorate with distance when user location is available
+  const withDistance = useMemo(() => {
+    if (!userLoc) return restaurants.map((r) => ({ ...r, _distance: null as number | null }));
+    return restaurants.map((r) => ({
+      ...r,
+      _distance:
+        r.latitude != null && r.longitude != null
+          ? distanceKm(userLoc.lat, userLoc.lon, r.latitude, r.longitude)
+          : null,
+    }));
+  }, [restaurants, userLoc]);
+
   const filtered = useMemo(() => {
     const term = q.trim().toLowerCase();
-    let list = restaurants.filter((r) => {
+    let list = withDistance.filter((r) => {
       const matchesTerm =
         !term ||
         r.name.toLowerCase().includes(term) ||
@@ -203,6 +277,16 @@ function Index() {
       const matchesCuisine = !cuisine || categoriesFor(r).includes(cuisine);
       return matchesTerm && matchesCuisine;
     });
+
+    if (sort === "near") {
+      // Pin restaurants without coords to the bottom
+      list = [...list].sort((a, b) => {
+        const ad = a._distance ?? Infinity;
+        const bd = b._distance ?? Infinity;
+        return ad - bd;
+      });
+      return list;
+    }
 
     list = [...list].sort((a, b) => {
       switch (sort) {
@@ -225,10 +309,15 @@ function Index() {
       }
     });
     return list;
-  }, [restaurants, q, sort, cuisine]);
+  }, [withDistance, q, sort, cuisine]);
 
-  const setSort = (v: SortKey) =>
+  const setSort = (v: SortKey) => {
+    if (v === "near" && !userLoc) {
+      requestLocation(true);
+      return;
+    }
     navigate({ search: { q, sort: v, cuisine }, replace: true });
+  };
   const setCuisine = (v: string) =>
     navigate({ search: { q, sort, cuisine: v }, replace: true });
   const clearFilters = () =>
@@ -389,6 +478,27 @@ function Index() {
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
+            <Button
+              variant={userLoc ? "default" : "outline"}
+              onClick={() => (userLoc ? clearLocation() : requestLocation(true))}
+              disabled={locLoading}
+              className={`h-11 rounded-xl ${
+                userLoc
+                  ? "bg-primary text-primary-foreground hover:bg-primary/90"
+                  : "bg-card border-border hover:border-primary/40"
+              }`}
+            >
+              {locLoading ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <Navigation className={`size-4 ${userLoc ? "" : "text-primary"}`} />
+              )}
+              <span className="hidden sm:inline">
+                {userLoc ? "Using your location" : "Near me"}
+              </span>
+              {userLoc && <X className="size-3.5 opacity-80 ml-1" />}
+            </Button>
+
             <Select value={sort} onValueChange={(v) => setSort(v as SortKey)}>
               <SelectTrigger className="h-11 w-[200px] bg-card border-border rounded-xl">
                 <ArrowUpDown className="size-4 text-muted-foreground" />
@@ -396,7 +506,11 @@ function Index() {
               </SelectTrigger>
               <SelectContent>
                 {SORT_OPTIONS.map((o) => (
-                  <SelectItem key={o.value} value={o.value}>
+                  <SelectItem
+                    key={o.value}
+                    value={o.value}
+                    disabled={o.value === "near" && !userLoc && locLoading}
+                  >
                     <span className="flex items-center gap-2">
                       <o.icon className="size-3.5" />
                       {o.label}
@@ -469,6 +583,7 @@ function Index() {
                 key={r.id}
                 restaurant={r}
                 rank={sort === "top" && idx < 3 ? idx + 1 : null}
+                distanceKm={r._distance ?? null}
               />
             ))}
           </div>
@@ -552,10 +667,18 @@ function FeaturedCard({ restaurant: r, rank }: { restaurant: Restaurant; rank: n
 function RestaurantCard({
   restaurant: r,
   rank,
+  distanceKm: dist,
 }: {
   restaurant: Restaurant;
   rank: number | null;
+  distanceKm?: number | null;
 }) {
+  const distLabel =
+    dist == null
+      ? null
+      : dist < 1
+        ? `${Math.round(dist * 1000)} m`
+        : `${dist.toFixed(dist < 10 ? 1 : 0)} km`;
   return (
     <Link
       to="/restaurant/$id"
@@ -574,6 +697,11 @@ function RestaurantCard({
         <span className="text-5xl group-hover:scale-110 transition-transform">
           {emojiFor(r)}
         </span>
+        {distLabel && (
+          <div className="absolute top-3 left-3 z-10 inline-flex items-center gap-1 bg-primary text-primary-foreground text-xs font-bold px-2.5 py-1 rounded-full shadow-md">
+            <Navigation className="size-3" /> {distLabel}
+          </div>
+        )}
         {r.google_rating && (
           <div className="absolute top-3 right-3 bg-background/95 text-foreground text-xs font-bold px-2.5 py-1 rounded-full backdrop-blur shadow-sm">
             ★ {r.google_rating}
