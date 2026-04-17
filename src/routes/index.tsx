@@ -310,13 +310,13 @@ function Index() {
               label="All"
               count={restaurants.length}
             />
-            {cuisines.map((c) => (
+            {categoryList.map((c) => (
               <CuisinePill
-                key={c.name}
-                active={cuisine === c.name}
-                onClick={() => setCuisine(c.name)}
-                emoji={emojiFor(c.name)}
-                label={c.name}
+                key={c.key}
+                active={cuisine === c.key}
+                onClick={() => setCuisine(c.key)}
+                emoji={c.emoji}
+                label={c.label}
                 count={c.count}
               />
             ))}
