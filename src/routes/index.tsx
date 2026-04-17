@@ -212,7 +212,7 @@ function Index() {
     <div>
       {/* HERO */}
       <section className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-[var(--gradient-hero)]" />
+        <div className="absolute inset-0" style={{ background: "var(--gradient-hero)" }} />
         <div
           className="absolute inset-0 opacity-40 mix-blend-overlay"
           style={{
