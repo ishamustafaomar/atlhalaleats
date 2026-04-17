@@ -435,7 +435,8 @@ function Index() {
         </div>
       </section>
 
-      {/* FEATURED RAIL — only on default view */}
+      {/* WEEKLY POLL BANNER */}
+      <PollBanner />
       {showFeatured && !loading && (
         <section className="max-w-6xl mx-auto px-4 sm:px-6 pt-10">
           <div className="flex items-end justify-between mb-5">
@@ -606,6 +607,7 @@ function Index() {
                 restaurant={r}
                 rank={sort === "top" && idx < 3 ? idx + 1 : null}
                 distanceKm={r._distance ?? null}
+                winner={winners.get(r.id) ?? null}
               />
             ))}
           </div>
@@ -690,10 +692,12 @@ function RestaurantCard({
   restaurant: r,
   rank,
   distanceKm: dist,
+  winner,
 }: {
   restaurant: Restaurant;
   rank: number | null;
   distanceKm?: number | null;
+  winner?: { pollSlug: string; pollTitle: string } | null;
 }) {
   const distLabel =
     dist == null
@@ -732,6 +736,12 @@ function RestaurantCard({
       </div>
 
       <div className="p-5">
+        {winner && (
+          <div className="mb-2 inline-flex items-center gap-1.5 bg-accent/15 text-accent border border-accent/30 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider">
+            <Trophy className="size-3" />
+            Poll winner · {winner.pollTitle}
+          </div>
+        )}
         <h3 className="font-display font-semibold text-xl text-foreground leading-tight group-hover:text-primary transition-colors line-clamp-1">
           {r.name}
         </h3>
