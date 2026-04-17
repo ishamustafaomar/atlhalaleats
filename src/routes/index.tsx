@@ -53,7 +53,7 @@ type Restaurant = {
 
 function Index() {
   const { q, sort, cuisine } = Route.useSearch();
-  const navigate = useNavigate({ from: "/" });
+  const navigate = Route.useNavigate();
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
   const [loading, setLoading] = useState(true);
   const [addOpen, setAddOpen] = useState(false);
