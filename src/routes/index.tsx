@@ -60,41 +60,67 @@ type Restaurant = {
   created_at: string;
 };
 
-// Map cuisine names → emoji icons for visual interest
-const CUISINE_EMOJI: Record<string, string> = {
-  Mediterranean: "🥙",
-  Pakistani: "🍛",
-  Indian: "🍛",
-  Lebanese: "🧆",
-  Turkish: "🥘",
-  Yemeni: "🍖",
-  Afghan: "🥟",
-  Persian: "🍢",
-  Egyptian: "🥙",
-  Moroccan: "🍲",
-  American: "🍔",
-  Mexican: "🌮",
-  Asian: "🥡",
-  Chinese: "🥢",
-  Thai: "🍜",
-  Korean: "🍱",
-  Pizza: "🍕",
-  Burger: "🍔",
-  Chicken: "🍗",
-  Seafood: "🦐",
-  Bakery: "🥐",
-  Cafe: "☕",
-  Dessert: "🍰",
-  BBQ: "🍖",
-  Halal: "🕌",
+// Smart category system. Each category matches restaurants by keywords found in
+// either the cuisine field or the restaurant name. Order matters — more specific
+// categories first so things like "Persian Kebab" tag as Persian, not Kebab.
+type Category = {
+  key: string;
+  label: string;
+  emoji: string;
+  // case-insensitive substrings to match against name + cuisine
+  match: string[];
 };
 
-function emojiFor(cuisine: string | null): string {
-  if (!cuisine) return "🍽️";
-  for (const key of Object.keys(CUISINE_EMOJI)) {
-    if (cuisine.toLowerCase().includes(key.toLowerCase())) return CUISINE_EMOJI[key];
+const CATEGORIES: Category[] = [
+  { key: "biryani", label: "Biryani", emoji: "🍛", match: ["biryani", "bawarchi"] },
+  { key: "shawarma", label: "Shawarma", emoji: "🌯", match: ["shawarma", "shwarma", "schawarma"] },
+  { key: "kebab", label: "Kebab", emoji: "🍢", match: ["kebab", "kabob", "kabab", "souvlaki"] },
+  { key: "mediterranean", label: "Mediterranean", emoji: "🥙", match: ["mediterranean", "greek", "athens", "aviva"] },
+  { key: "lebanese", label: "Lebanese", emoji: "🧆", match: ["lebanese", "falafel", "baraka"] },
+  { key: "turkish", label: "Turkish", emoji: "🥘", match: ["turkish", "turk", "ottoman", "anatolia"] },
+  { key: "persian", label: "Persian", emoji: "🍢", match: ["persian", "iranian", "chelo", "kabob house", "farsi", "delbar", "dyar"] },
+  { key: "afghan", label: "Afghan", emoji: "🥟", match: ["afghan", "kabul"] },
+  { key: "yemeni", label: "Yemeni", emoji: "🍖", match: ["yemen", "yemeni", "mandi", "azouma"] },
+  { key: "egyptian", label: "Egyptian", emoji: "🥙", match: ["egyptian", "egypt"] },
+  { key: "moroccan", label: "Moroccan", emoji: "🍲", match: ["moroccan", "tagine", "marrakech"] },
+  { key: "syrian", label: "Syrian / Iraqi", emoji: "🫓", match: ["syrian", "iraqi", "damascus", "aleppo"] },
+  { key: "arab", label: "Arab / Middle Eastern", emoji: "🕌", match: ["arab", "middle eastern", "halal kitchen"] },
+  { key: "pakistani", label: "Pakistani", emoji: "🍛", match: ["pakistani", "karachi", "lahore", "desi"] },
+  { key: "indian", label: "Indian", emoji: "🍛", match: ["indian", "curry", "tandoor", "masala", "dhaba"] },
+  { key: "asian", label: "Asian", emoji: "🥢", match: ["asian", "fusion asian", "bistro"] },
+  { key: "chinese", label: "Chinese", emoji: "🥡", match: ["chinese", "wok", "dragon", "panda"] },
+  { key: "thai", label: "Thai", emoji: "🍜", match: ["thai", "pad", "tom yum"] },
+  { key: "korean", label: "Korean", emoji: "🍱", match: ["korean", "kimchi", "bulgogi"] },
+  { key: "japanese", label: "Japanese / Sushi", emoji: "🍣", match: ["sushi", "japanese", "ramen", "budi"] },
+  { key: "mexican", label: "Mexican", emoji: "🌮", match: ["mexican", "taco", "burrito", "arepa", "cocinita"] },
+  { key: "burger", label: "Burgers", emoji: "🍔", match: ["burger", "cheesesteak", "smash"] },
+  { key: "chicken", label: "Chicken", emoji: "🍗", match: ["chicken", "wing", "fried", "boss wings", "chick'n", "fryd"] },
+  { key: "pizza", label: "Pizza", emoji: "🍕", match: ["pizza", "pizzeria"] },
+  { key: "bbq", label: "BBQ & Grill", emoji: "🍖", match: ["bbq", "grill", "smoke", "briskfire"] },
+  { key: "seafood", label: "Seafood", emoji: "🦐", match: ["seafood", "fish", "shrimp", "crab"] },
+  { key: "cafe", label: "Cafe & Coffee", emoji: "☕", match: ["cafe", "coffee", "café"] },
+  { key: "bakery", label: "Bakery & Sweets", emoji: "🥐", match: ["bakery", "bake", "pastry", "dessert", "cake", "sweet", "cone"] },
+  { key: "soul", label: "Soul / Southern", emoji: "🍗", match: ["soul", "southern", "auntie", "kitchen"] },
+];
+
+function categoriesFor(r: { name: string; cuisine: string | null }): string[] {
+  const haystack = `${r.name} ${r.cuisine ?? ""}`.toLowerCase();
+  const tags: string[] = [];
+  for (const cat of CATEGORIES) {
+    if (cat.match.some((m) => haystack.includes(m))) {
+      tags.push(cat.key);
+    }
   }
-  return "🍽️";
+  return tags;
+}
+
+function emojiFor(r: { name: string; cuisine: string | null } | string | null): string {
+  if (!r) return "🍽️";
+  const obj = typeof r === "string" ? { name: "", cuisine: r } : r;
+  const tags = categoriesFor(obj);
+  if (tags.length === 0) return "🍽️";
+  const cat = CATEGORIES.find((c) => c.key === tags[0]);
+  return cat?.emoji ?? "🍽️";
 }
 
 // Generate a stable accent gradient per card
