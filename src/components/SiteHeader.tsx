@@ -1,11 +1,13 @@
 import { Link } from "@tanstack/react-router";
 import { useAuth } from "@/lib/auth";
+import { useIsAdmin } from "@/hooks/use-admin";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { LogOut } from "lucide-react";
+import { LogOut, Vote } from "lucide-react";
 
 export function SiteHeader() {
   const { user, signInWithGoogle, signOut, loading } = useAuth();
+  const { isAdmin } = useIsAdmin();
 
   return (
     <header className="sticky top-0 z-40 backdrop-blur-md bg-background/80 border-b border-border">
@@ -23,6 +25,29 @@ export function SiteHeader() {
         </Link>
 
         <div className="flex items-center gap-3">
+          <Link
+            to="/polls"
+            className="hidden sm:inline-flex items-center gap-1.5 text-sm font-semibold text-foreground hover:text-primary transition-colors"
+            activeProps={{ className: "text-primary" }}
+          >
+            <Vote className="size-4" />
+            Polls
+          </Link>
+          <Link
+            to="/polls"
+            className="sm:hidden text-foreground hover:text-primary"
+            aria-label="Polls"
+          >
+            <Vote className="size-5" />
+          </Link>
+          {isAdmin && (
+            <Link
+              to="/admin/polls"
+              className="hidden sm:inline-block text-xs font-semibold text-muted-foreground hover:text-foreground"
+            >
+              Admin
+            </Link>
+          )}
           {loading ? null : user ? (
             <>
               <Avatar className="size-9 border border-border">

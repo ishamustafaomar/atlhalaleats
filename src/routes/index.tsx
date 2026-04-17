@@ -23,6 +23,7 @@ import {
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { AddRestaurantDialog } from "@/components/AddRestaurantDialog";
+import { PollBanner } from "@/components/PollBanner";
 import { useAuth } from "@/lib/auth";
 import {
   Select,
@@ -172,6 +173,9 @@ function Index() {
   const [localQ, setLocalQ] = useState(q);
   const [userLoc, setUserLoc] = useState<{ lat: number; lon: number } | null>(null);
   const [locLoading, setLocLoading] = useState(false);
+  const [winners, setWinners] = useState<Map<string, { pollSlug: string; pollTitle: string }>>(
+    new Map(),
+  );
 
   useEffect(() => {
     setLocalQ(q);
@@ -233,6 +237,24 @@ function Index() {
 
   useEffect(() => {
     load();
+    // Load winners (rank #1) for each poll, to show "Winner" badge on cards
+    (async () => {
+      const { data: polls } = await supabase
+        .from("polls")
+        .select("id, slug, title");
+      if (!polls) return;
+      const map = new Map<string, { pollSlug: string; pollTitle: string }>();
+      await Promise.all(
+        polls.map(async (p) => {
+          const { data: res } = await supabase.rpc("poll_results", { _poll_id: p.id });
+          const top = (res ?? [])[0] as { restaurant_id: string; points: number } | undefined;
+          if (top && top.points > 0 && !map.has(top.restaurant_id)) {
+            map.set(top.restaurant_id, { pollSlug: p.slug, pollTitle: p.title });
+          }
+        }),
+      );
+      setWinners(map);
+    })();
   }, []);
 
   // Build category list with counts based on derived tags
@@ -413,7 +435,8 @@ function Index() {
         </div>
       </section>
 
-      {/* FEATURED RAIL — only on default view */}
+      {/* WEEKLY POLL BANNER */}
+      <PollBanner />
       {showFeatured && !loading && (
         <section className="max-w-6xl mx-auto px-4 sm:px-6 pt-10">
           <div className="flex items-end justify-between mb-5">
@@ -584,6 +607,7 @@ function Index() {
                 restaurant={r}
                 rank={sort === "top" && idx < 3 ? idx + 1 : null}
                 distanceKm={r._distance ?? null}
+                winner={winners.get(r.id) ?? null}
               />
             ))}
           </div>
@@ -668,10 +692,12 @@ function RestaurantCard({
   restaurant: r,
   rank,
   distanceKm: dist,
+  winner,
 }: {
   restaurant: Restaurant;
   rank: number | null;
   distanceKm?: number | null;
+  winner?: { pollSlug: string; pollTitle: string } | null;
 }) {
   const distLabel =
     dist == null
@@ -710,6 +736,12 @@ function RestaurantCard({
       </div>
 
       <div className="p-5">
+        {winner && (
+          <div className="mb-2 inline-flex items-center gap-1.5 bg-accent/15 text-accent border border-accent/30 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider">
+            <Trophy className="size-3" />
+            Poll winner · {winner.pollTitle}
+          </div>
+        )}
         <h3 className="font-display font-semibold text-xl text-foreground leading-tight group-hover:text-primary transition-colors line-clamp-1">
           {r.name}
         </h3>
