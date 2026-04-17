@@ -46,6 +46,116 @@ export type Database = {
           },
         ]
       }
+      poll_vote_items: {
+        Row: {
+          id: string
+          rank: number
+          restaurant_id: string
+          vote_id: string
+        }
+        Insert: {
+          id?: string
+          rank: number
+          restaurant_id: string
+          vote_id: string
+        }
+        Update: {
+          id?: string
+          rank?: number
+          restaurant_id?: string
+          vote_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "poll_vote_items_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "poll_vote_items_vote_id_fkey"
+            columns: ["vote_id"]
+            isOneToOne: false
+            referencedRelation: "poll_votes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      poll_votes: {
+        Row: {
+          created_at: string
+          id: string
+          poll_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          poll_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          poll_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "poll_votes_poll_id_fkey"
+            columns: ["poll_id"]
+            isOneToOne: false
+            referencedRelation: "polls"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      polls: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          cuisine: string | null
+          description: string | null
+          id: string
+          slug: string
+          status: string
+          title: string
+          updated_at: string
+          week_end: string
+          week_start: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          cuisine?: string | null
+          description?: string | null
+          id?: string
+          slug: string
+          status?: string
+          title: string
+          updated_at?: string
+          week_end?: string
+          week_start?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          cuisine?: string | null
+          description?: string | null
+          id?: string
+          slug?: string
+          status?: string
+          title?: string
+          updated_at?: string
+          week_end?: string
+          week_start?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -153,15 +263,57 @@ export type Database = {
           },
         ]
       }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      cast_poll_vote: {
+        Args: { _poll_id: string; _restaurant_ids: string[] }
+        Returns: string
+      }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      poll_results: {
+        Args: { _poll_id: string }
+        Returns: {
+          cuisine: string
+          name: string
+          points: number
+          restaurant_id: string
+          vote_count: number
+        }[]
+      }
       refresh_restaurant_stats: { Args: { rid: string }; Returns: undefined }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "moderator" | "user"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -288,6 +440,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "moderator", "user"],
+    },
   },
 } as const
