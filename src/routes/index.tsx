@@ -144,7 +144,7 @@ function Index() {
                 </div>
                 <p className="text-sm text-muted-foreground mt-1">{r.cuisine}</p>
                 {r.note && (
-                  <p className="text-xs text-brick mt-2 italic">⚠ {r.note.replace(/\\\*/g, "*")}</p>
+                  <p className="text-xs text-brick mt-2 italic font-medium">⚠ {r.note.replace(/\\\*/g, "*")}</p>
                 )}
                 <div className="mt-4 pt-4 border-t border-border flex items-center justify-between">
                   <div className="flex items-center gap-2">
