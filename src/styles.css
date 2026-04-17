@@ -83,10 +83,10 @@
   --secondary: oklch(0.94 0.03 80);          /* warm sand */
   --secondary-foreground: oklch(0.28 0.05 150);
   --muted: oklch(0.95 0.02 85);
-  --muted-foreground: oklch(0.35 0.04 145);
+  --muted-foreground: oklch(0.18 0.02 150);
   --accent: oklch(0.78 0.16 70);             /* saffron */
-  --accent-foreground: oklch(0.22 0.04 150);
-  --brick: oklch(0.45 0.18 35);
+  --accent-foreground: oklch(0.18 0.02 150);
+  --brick: oklch(0.25 0.12 35);
   --destructive: oklch(0.55 0.22 28);
   --destructive-foreground: oklch(0.985 0.012 85);
   --border: oklch(0.82 0.025 80);
