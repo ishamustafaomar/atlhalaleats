@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { zodValidator, fallback } from "@tanstack/zod-adapter";
 import { z } from "zod";
@@ -6,7 +6,18 @@ import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { StarRating } from "@/components/StarRating";
-import { Search, MapPin, Plus, ArrowUpDown, X } from "lucide-react";
+import {
+  Search,
+  MapPin,
+  Plus,
+  ArrowUpDown,
+  X,
+  Sparkles,
+  TrendingUp,
+  Clock,
+  Trophy,
+  ChevronRight,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AddRestaurantDialog } from "@/components/AddRestaurantDialog";
 import { useAuth } from "@/lib/auth";
@@ -19,10 +30,10 @@ import {
 } from "@/components/ui/select";
 
 const SORT_OPTIONS = [
-  { value: "top", label: "Highest rated" },
-  { value: "popular", label: "Most reviewed" },
-  { value: "newest", label: "Newest" },
-  { value: "name", label: "A → Z" },
+  { value: "top", label: "Highest rated", icon: Trophy },
+  { value: "popular", label: "Most reviewed", icon: TrendingUp },
+  { value: "newest", label: "Newest", icon: Clock },
+  { value: "name", label: "A → Z", icon: ArrowUpDown },
 ] as const;
 
 type SortKey = (typeof SORT_OPTIONS)[number]["value"];
@@ -32,8 +43,6 @@ const searchSchema = z.object({
   sort: fallback(z.enum(["top", "popular", "newest", "name"]), "popular").default("popular"),
   cuisine: fallback(z.string(), "").default(""),
 });
-
-type SearchParams = z.infer<typeof searchSchema>;
 
 export const Route = createFileRoute("/")({
   validateSearch: zodValidator(searchSchema),
@@ -51,6 +60,58 @@ type Restaurant = {
   created_at: string;
 };
 
+// Map cuisine names → emoji icons for visual interest
+const CUISINE_EMOJI: Record<string, string> = {
+  Mediterranean: "🥙",
+  Pakistani: "🍛",
+  Indian: "🍛",
+  Lebanese: "🧆",
+  Turkish: "🥘",
+  Yemeni: "🍖",
+  Afghan: "🥟",
+  Persian: "🍢",
+  Egyptian: "🥙",
+  Moroccan: "🍲",
+  American: "🍔",
+  Mexican: "🌮",
+  Asian: "🥡",
+  Chinese: "🥢",
+  Thai: "🍜",
+  Korean: "🍱",
+  Pizza: "🍕",
+  Burger: "🍔",
+  Chicken: "🍗",
+  Seafood: "🦐",
+  Bakery: "🥐",
+  Cafe: "☕",
+  Dessert: "🍰",
+  BBQ: "🍖",
+  Halal: "🕌",
+};
+
+function emojiFor(cuisine: string | null): string {
+  if (!cuisine) return "🍽️";
+  for (const key of Object.keys(CUISINE_EMOJI)) {
+    if (cuisine.toLowerCase().includes(key.toLowerCase())) return CUISINE_EMOJI[key];
+  }
+  return "🍽️";
+}
+
+// Generate a stable accent gradient per card
+function gradientFor(id: string): string {
+  const hues = [
+    "from-amber-400/30 via-orange-300/20 to-rose-300/20",
+    "from-emerald-400/30 via-teal-300/20 to-lime-300/20",
+    "from-rose-400/30 via-pink-300/20 to-orange-300/20",
+    "from-sky-400/30 via-cyan-300/20 to-emerald-300/20",
+    "from-violet-400/30 via-fuchsia-300/20 to-pink-300/20",
+    "from-yellow-400/30 via-amber-300/20 to-orange-300/20",
+  ];
+  let hash = 0;
+  for (let i = 0; i < id.length; i++) hash = (hash * 31 + id.charCodeAt(i)) >>> 0;
+  return hues[hash % hues.length];
+}
+
 function Index() {
   const { q, sort, cuisine } = Route.useSearch();
   const navigate = Route.useNavigate();
@@ -60,16 +121,14 @@ function Index() {
   const { user, signInWithGoogle } = useAuth();
   const [localQ, setLocalQ] = useState(q);
 
-  // keep input in sync if URL changes externally
   useEffect(() => {
     setLocalQ(q);
   }, [q]);
 
-  // debounce search input → URL
   useEffect(() => {
     const t = setTimeout(() => {
       if (localQ !== q) {
-        navigate({ search: (prev: SearchParams) => ({ ...prev, q: localQ }), replace: true });
+        navigate({ search: (prev) => ({ ...prev, q: localQ }), replace: true });
       }
     }, 250);
     return () => clearTimeout(t);
@@ -89,11 +148,20 @@ function Index() {
   }, []);
 
   const cuisines = useMemo(() => {
-    const set = new Set<string>();
+    const counts = new Map<string, number>();
     restaurants.forEach((r) => {
-      if (r.cuisine) set.add(r.cuisine);
+      if (r.cuisine) counts.set(r.cuisine, (counts.get(r.cuisine) ?? 0) + 1);
     });
-    return Array.from(set).sort();
+    return Array.from(counts.entries())
+      .sort((a, b) => b[1] - a[1])
+      .map(([name, count]) => ({ name, count }));
+  }, [restaurants]);
+
+  const featured = useMemo(() => {
+    return [...restaurants]
+      .filter((r) => (r.review_count ?? 0) >= 1 && Number(r.avg_rating ?? 0) >= 4)
+      .sort((a, b) => Number(b.avg_rating ?? 0) - Number(a.avg_rating ?? 0))
+      .slice(0, 8);
   }, [restaurants]);
 
   const filtered = useMemo(() => {
@@ -131,51 +199,67 @@ function Index() {
   }, [restaurants, q, sort, cuisine]);
 
   const setSort = (v: SortKey) =>
-    navigate({ search: (prev: SearchParams) => ({ ...prev, sort: v }), replace: true });
+    navigate({ search: (prev) => ({ ...prev, sort: v }), replace: true });
   const setCuisine = (v: string) =>
-    navigate({ search: (prev: SearchParams) => ({ ...prev, cuisine: v === "__all" ? "" : v }), replace: true });
+    navigate({ search: (prev) => ({ ...prev, cuisine: v }), replace: true });
   const clearFilters = () =>
     navigate({ search: { q: "", sort: "popular", cuisine: "" }, replace: true });
 
   const hasFilters = q || cuisine || sort !== "popular";
+  const showFeatured = !hasFilters && featured.length >= 4;
 
   return (
     <div>
-      {/* Hero */}
+      {/* HERO */}
       <section className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-[var(--gradient-hero)] opacity-95" />
+        <div className="absolute inset-0 bg-[var(--gradient-hero)]" />
         <div
-          className="absolute inset-0 opacity-20"
+          className="absolute inset-0 opacity-40 mix-blend-overlay"
           style={{
             backgroundImage:
-              "radial-gradient(circle at 20% 30%, oklch(0.78 0.16 70 / 0.4), transparent 40%), radial-gradient(circle at 80% 70%, oklch(0.55 0.18 35 / 0.3), transparent 45%)",
+              "radial-gradient(circle at 15% 20%, oklch(0.78 0.16 70 / 0.6), transparent 45%), radial-gradient(circle at 85% 80%, oklch(0.55 0.18 35 / 0.5), transparent 50%)",
           }}
         />
-        <div className="relative max-w-6xl mx-auto px-4 sm:px-6 py-20 sm:py-28">
-          <Badge className="bg-background/20 text-primary-foreground border-background/30 backdrop-blur-sm mb-6">
-            <MapPin className="size-3 mr-1" /> Greater Atlanta · {restaurants.length} spots
+        {/* subtle grain */}
+        <div
+          className="absolute inset-0 opacity-[0.07] pointer-events-none"
+          style={{
+            backgroundImage:
+              "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")",
+          }}
+        />
+
+        <div className="relative max-w-6xl mx-auto px-4 sm:px-6 pt-16 pb-10 sm:pt-24 sm:pb-16">
+          <Badge className="bg-background/20 text-primary-foreground border-background/30 backdrop-blur-md mb-6 px-3 py-1">
+            <MapPin className="size-3 mr-1.5" /> Greater Atlanta
+            <span className="mx-2 opacity-60">·</span>
+            <Sparkles className="size-3 mr-1" />
+            {restaurants.length} verified spots
           </Badge>
-          <h1 className="font-display font-bold text-5xl sm:text-7xl text-primary-foreground max-w-3xl leading-[1.05] drop-shadow-[0_2px_12px_rgba(0,0,0,0.35)]">
-            Find your next <em className="not-italic text-accent">halal</em> favorite in Atlanta.
+
+          <h1 className="font-display font-bold text-5xl sm:text-7xl lg:text-8xl text-primary-foreground max-w-4xl leading-[0.95] tracking-tight drop-shadow-[0_2px_20px_rgba(0,0,0,0.4)]">
+            Atlanta's <em className="not-italic text-accent italic">halal</em> table,
+            <br />
+            <span className="text-primary-foreground/90">curated by you.</span>
           </h1>
-          <p className="mt-6 text-lg text-primary-foreground/95 max-w-xl drop-shadow-[0_1px_8px_rgba(0,0,0,0.3)]">
-            Honest reviews, ratings, and conversation around the city's halal restaurants — from
-            shawarma joints to biryani houses.
+          <p className="mt-6 text-lg sm:text-xl text-primary-foreground/95 max-w-xl leading-relaxed drop-shadow-[0_1px_8px_rgba(0,0,0,0.3)]">
+            Honest reviews, ratings, and conversation around the city's best halal kitchens.
           </p>
 
-          <div className="mt-10 max-w-xl">
-            <div className="relative">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 size-5 text-muted-foreground" />
+          {/* Search */}
+          <div className="mt-10 max-w-2xl">
+            <div className="relative group">
+              <Search className="absolute left-5 top-1/2 -translate-y-1/2 size-5 text-muted-foreground transition-colors group-focus-within:text-primary" />
               <Input
                 value={localQ}
                 onChange={(e) => setLocalQ(e.target.value)}
-                placeholder="Search by name or cuisine…"
-                className="pl-12 h-14 text-base bg-background border-0 shadow-[var(--shadow-soft)] rounded-2xl"
+                placeholder="Search shawarma, biryani, kebab…"
+                className="pl-14 pr-14 h-16 text-base bg-background border-0 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.35)] rounded-2xl focus-visible:ring-2 focus-visible:ring-accent"
               />
               {localQ && (
                 <button
                   onClick={() => setLocalQ("")}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-muted text-muted-foreground"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 p-2 rounded-full hover:bg-muted text-muted-foreground"
                   aria-label="Clear search"
                 >
                   <X className="size-4" />
@@ -186,15 +270,79 @@ function Index() {
         </div>
       </section>
 
-      {/* Toolbar */}
+      {/* CUISINE PILLS — side scrolling */}
+      <section className="border-b border-border bg-card/40 backdrop-blur-md sticky top-16 z-30">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6">
+          <div className="flex items-center gap-3 py-4 overflow-x-auto scrollbar-hide -mx-4 sm:-mx-6 px-4 sm:px-6">
+            <CuisinePill
+              active={!cuisine}
+              onClick={() => setCuisine("")}
+              emoji="🍽️"
+              label="All"
+              count={restaurants.length}
+            />
+            {cuisines.map((c) => (
+              <CuisinePill
+                key={c.name}
+                active={cuisine === c.name}
+                onClick={() => setCuisine(c.name)}
+                emoji={emojiFor(c.name)}
+                label={c.name}
+                count={c.count}
+              />
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* FEATURED RAIL — only on default view */}
+      {showFeatured && !loading && (
+        <section className="max-w-6xl mx-auto px-4 sm:px-6 pt-10">
+          <div className="flex items-end justify-between mb-5">
+            <div>
+              <div className="flex items-center gap-2 text-accent text-sm font-semibold uppercase tracking-wider">
+                <Trophy className="size-4" /> Top rated
+              </div>
+              <h2 className="font-display font-bold text-2xl sm:text-3xl text-foreground mt-1">
+                Community favorites
+              </h2>
+            </div>
+            <button
+              onClick={() => setSort("top")}
+              className="text-sm font-medium text-primary hover:underline inline-flex items-center gap-1"
+            >
+              See all <ChevronRight className="size-4" />
+            </button>
+          </div>
+          <div className="flex gap-4 overflow-x-auto scrollbar-hide -mx-4 sm:-mx-6 px-4 sm:px-6 pb-2 snap-x snap-mandatory">
+            {featured.map((r, idx) => (
+              <FeaturedCard key={r.id} restaurant={r} rank={idx + 1} />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* TOOLBAR */}
       <section className="max-w-6xl mx-auto px-4 sm:px-6 pt-10">
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
           <div>
-            <h2 className="font-display font-bold text-3xl text-foreground">
-              {q ? `Results for "${q}"` : cuisine ? cuisine : "All restaurants"}
+            <h2 className="font-display font-bold text-3xl sm:text-4xl text-foreground tracking-tight">
+              {q ? (
+                <>
+                  Results for <span className="text-primary">"{q}"</span>
+                </>
+              ) : cuisine ? (
+                <>
+                  <span className="mr-2">{emojiFor(cuisine)}</span>
+                  {cuisine}
+                </>
+              ) : (
+                "All restaurants"
+              )}
             </h2>
-            <p className="text-sm text-muted-foreground mt-1">
-              {filtered.length} {filtered.length === 1 ? "place" : "places"}
+            <p className="text-sm text-muted-foreground mt-1.5">
+              <span className="font-medium text-foreground">{filtered.length}</span>{" "}
+              {filtered.length === 1 ? "place" : "places"}
               {sort !== "popular" && (
                 <>
                   {" "}· sorted by{" "}
@@ -207,31 +355,18 @@ function Index() {
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            {cuisines.length > 0 && (
-              <Select value={cuisine || "__all"} onValueChange={setCuisine}>
-                <SelectTrigger className="h-10 w-[180px] bg-card border-border">
-                  <SelectValue placeholder="All cuisines" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__all">All cuisines</SelectItem>
-                  {cuisines.map((c) => (
-                    <SelectItem key={c} value={c}>
-                      {c}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
-
             <Select value={sort} onValueChange={(v) => setSort(v as SortKey)}>
-              <SelectTrigger className="h-10 w-[180px] bg-card border-border">
+              <SelectTrigger className="h-11 w-[200px] bg-card border-border rounded-xl">
                 <ArrowUpDown className="size-4 text-muted-foreground" />
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 {SORT_OPTIONS.map((o) => (
                   <SelectItem key={o.value} value={o.value}>
-                    {o.label}
+                    <span className="flex items-center gap-2">
+                      <o.icon className="size-3.5" />
+                      {o.label}
+                    </span>
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -239,8 +374,7 @@ function Index() {
 
             <Button
               onClick={() => (user ? setAddOpen(true) : signInWithGoogle())}
-              variant="outline"
-              className="h-10 border-primary/30 hover:bg-primary/5"
+              className="h-11 rounded-xl bg-foreground text-background hover:bg-foreground/90 shadow-sm"
             >
               <Plus className="size-4" />
               <span className="hidden sm:inline">Add restaurant</span>
@@ -255,11 +389,11 @@ function Index() {
                 label={`"${q}"`}
                 onRemove={() => {
                   setLocalQ("");
-                  navigate({ search: (prev: SearchParams) => ({ ...prev, q: "" }), replace: true });
+                  navigate({ search: (prev) => ({ ...prev, q: "" }), replace: true });
                 }}
               />
             )}
-            {cuisine && <FilterChip label={cuisine} onRemove={() => setCuisine("__all")} />}
+            {cuisine && <FilterChip label={cuisine} onRemove={() => setCuisine("")} />}
             <button
               onClick={clearFilters}
               className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-4"
@@ -270,80 +404,173 @@ function Index() {
         )}
       </section>
 
-      {/* Grid */}
-      <section className="max-w-6xl mx-auto px-4 sm:px-6 py-8 pb-16">
+      {/* GRID */}
+      <section className="max-w-6xl mx-auto px-4 sm:px-6 py-8 pb-20">
         {loading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="h-44 rounded-2xl bg-muted animate-pulse" />
+              <div key={i} className="h-56 rounded-3xl bg-muted animate-pulse" />
             ))}
           </div>
         ) : filtered.length === 0 ? (
-          <div className="text-center py-20 rounded-3xl border border-dashed border-border bg-card/40">
-            <p className="font-display text-xl text-foreground">No restaurants match your filters</p>
+          <div className="text-center py-24 rounded-3xl border border-dashed border-border bg-card/40">
+            <div className="text-5xl mb-3">🤷</div>
+            <p className="font-display text-2xl text-foreground">No restaurants match</p>
             <p className="text-sm text-muted-foreground mt-2">
               Try a different cuisine or clear your filters.
             </p>
-            <Button onClick={clearFilters} variant="outline" className="mt-5">
+            <Button onClick={clearFilters} variant="outline" className="mt-6 rounded-xl">
               Clear filters
             </Button>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {filtered.map((r, idx) => {
-              const isTop = sort === "top" && idx < 3 && Number(r.avg_rating ?? 0) >= 4.5;
-              return (
-                <Link
-                  key={r.id}
-                  to="/restaurant/$id"
-                  params={{ id: r.id }}
-                  className="group relative rounded-2xl bg-[var(--gradient-card)] border border-border p-6 shadow-[var(--shadow-soft)] hover:shadow-[var(--shadow-glow)] hover:-translate-y-0.5 transition-all"
-                >
-                  {isTop && (
-                    <div className="absolute -top-2 -right-2 bg-accent text-accent-foreground text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-full shadow-md">
-                      #{idx + 1}
-                    </div>
-                  )}
-                  <div className="flex items-start justify-between gap-3">
-                    <h3 className="font-display font-semibold text-xl text-foreground leading-tight group-hover:text-primary transition-colors">
-                      {r.name}
-                    </h3>
-                    {r.google_rating && (
-                      <Badge className="shrink-0 bg-accent/15 text-foreground border-accent/30 hover:bg-accent/20">
-                        ★ {r.google_rating}
-                      </Badge>
-                    )}
-                  </div>
-                  <p className="text-sm text-muted-foreground mt-1">{r.cuisine}</p>
-                  {r.note && (
-                    <p className="text-xs text-brick mt-2 italic font-medium">
-                      ⚠ {r.note.replace(/\\\*/g, "*")}
-                    </p>
-                  )}
-                  <div className="mt-4 pt-4 border-t border-border flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <StarRating value={Number(r.avg_rating ?? 0)} size="sm" />
-                      {r.review_count && r.review_count > 0 ? (
-                        <span className="text-xs text-muted-foreground">
-                          {Number(r.avg_rating).toFixed(1)} · {r.review_count}
-                        </span>
-                      ) : (
-                        <span className="text-xs text-muted-foreground">No reviews yet</span>
-                      )}
-                    </div>
-                    <span className="text-xs font-medium text-primary opacity-0 group-hover:opacity-100 transition-opacity">
-                      View →
-                    </span>
-                  </div>
-                </Link>
-              );
-            })}
+            {filtered.map((r, idx) => (
+              <RestaurantCard
+                key={r.id}
+                restaurant={r}
+                rank={sort === "top" && idx < 3 ? idx + 1 : null}
+              />
+            ))}
           </div>
         )}
       </section>
 
       <AddRestaurantDialog open={addOpen} onOpenChange={setAddOpen} onAdded={load} />
     </div>
+  );
+}
+
+function CuisinePill({
+  active,
+  onClick,
+  emoji,
+  label,
+  count,
+}: {
+  active: boolean;
+  onClick: () => void;
+  emoji: string;
+  label: string;
+  count: number;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={`shrink-0 inline-flex items-center gap-2 px-4 py-2 rounded-full border text-sm font-medium transition-all whitespace-nowrap ${
+        active
+          ? "bg-foreground text-background border-foreground shadow-sm"
+          : "bg-card text-foreground border-border hover:border-primary/40 hover:bg-primary/5"
+      }`}
+    >
+      <span className="text-base leading-none">{emoji}</span>
+      {label}
+      <span
+        className={`text-[10px] tabular-nums ${
+          active ? "text-background/70" : "text-muted-foreground"
+        }`}
+      >
+        {count}
+      </span>
+    </button>
+  );
+}
+
+function FeaturedCard({ restaurant: r, rank }: { restaurant: Restaurant; rank: number }) {
+  return (
+    <Link
+      to="/restaurant/$id"
+      params={{ id: r.id }}
+      className="group shrink-0 w-[280px] sm:w-[320px] snap-start rounded-3xl overflow-hidden border border-border bg-card shadow-[var(--shadow-soft)] hover:shadow-[var(--shadow-glow)] hover:-translate-y-1 transition-all"
+    >
+      <div
+        className={`relative h-32 bg-gradient-to-br ${gradientFor(r.id)} flex items-center justify-center`}
+      >
+        <span className="text-6xl">{emojiFor(r.cuisine)}</span>
+        <div className="absolute top-3 left-3 flex items-center gap-1 bg-foreground/90 text-background text-xs font-bold px-2.5 py-1 rounded-full backdrop-blur">
+          <Trophy className="size-3 text-accent" /> #{rank}
+        </div>
+        <div className="absolute top-3 right-3 bg-background/90 text-foreground text-xs font-bold px-2.5 py-1 rounded-full backdrop-blur">
+          ★ {Number(r.avg_rating ?? 0).toFixed(1)}
+        </div>
+      </div>
+      <div className="p-4">
+        <h3 className="font-display font-semibold text-lg text-foreground leading-tight group-hover:text-primary transition-colors line-clamp-1">
+          {r.name}
+        </h3>
+        <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{r.cuisine}</p>
+        <div className="mt-3 flex items-center justify-between">
+          <StarRating value={Number(r.avg_rating ?? 0)} size="sm" />
+          <span className="text-xs text-muted-foreground">
+            {r.review_count} {r.review_count === 1 ? "review" : "reviews"}
+          </span>
+        </div>
+      </div>
+    </Link>
+  );
+}
+
+function RestaurantCard({
+  restaurant: r,
+  rank,
+}: {
+  restaurant: Restaurant;
+  rank: number | null;
+}) {
+  return (
+    <Link
+      to="/restaurant/$id"
+      params={{ id: r.id }}
+      className="group relative rounded-3xl overflow-hidden border border-border bg-card shadow-[var(--shadow-soft)] hover:shadow-[var(--shadow-glow)] hover:-translate-y-1 transition-all"
+    >
+      {rank !== null && (
+        <div className="absolute top-3 left-3 z-10 flex items-center gap-1 bg-accent text-accent-foreground text-xs font-bold px-2.5 py-1 rounded-full shadow-md">
+          <Trophy className="size-3" /> #{rank}
+        </div>
+      )}
+      {/* Visual header */}
+      <div
+        className={`relative h-28 bg-gradient-to-br ${gradientFor(r.id)} flex items-center justify-center overflow-hidden`}
+      >
+        <span className="text-5xl group-hover:scale-110 transition-transform">
+          {emojiFor(r.cuisine)}
+        </span>
+        {r.google_rating && (
+          <div className="absolute top-3 right-3 bg-background/95 text-foreground text-xs font-bold px-2.5 py-1 rounded-full backdrop-blur shadow-sm">
+            ★ {r.google_rating}
+          </div>
+        )}
+      </div>
+
+      <div className="p-5">
+        <h3 className="font-display font-semibold text-xl text-foreground leading-tight group-hover:text-primary transition-colors line-clamp-1">
+          {r.name}
+        </h3>
+        <p className="text-sm text-muted-foreground mt-0.5">{r.cuisine}</p>
+
+        {r.note && (
+          <p className="text-xs text-brick mt-3 italic font-medium line-clamp-2">
+            ⚠ {r.note.replace(/\\\*/g, "*")}
+          </p>
+        )}
+
+        <div className="mt-4 pt-4 border-t border-border flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <StarRating value={Number(r.avg_rating ?? 0)} size="sm" />
+            {r.review_count && r.review_count > 0 ? (
+              <span className="text-xs text-muted-foreground tabular-nums">
+                {Number(r.avg_rating).toFixed(1)} · {r.review_count}
+              </span>
+            ) : (
+              <span className="text-xs text-muted-foreground">No reviews</span>
+            )}
+          </div>
+          <span className="text-xs font-semibold text-primary opacity-0 group-hover:opacity-100 group-hover:translate-x-0 -translate-x-1 transition-all">
+            View →
+          </span>
+        </div>
+      </div>
+    </Link>
   );
 }
 
