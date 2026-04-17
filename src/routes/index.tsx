@@ -583,6 +583,7 @@ function Index() {
                 key={r.id}
                 restaurant={r}
                 rank={sort === "top" && idx < 3 ? idx + 1 : null}
+                distanceKm={r._distance ?? null}
               />
             ))}
           </div>
