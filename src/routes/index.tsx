@@ -170,6 +170,8 @@ function Index() {
   const [addOpen, setAddOpen] = useState(false);
   const { user, signInWithGoogle } = useAuth();
   const [localQ, setLocalQ] = useState(q);
+  const [userLoc, setUserLoc] = useState<{ lat: number; lon: number } | null>(null);
+  const [locLoading, setLocLoading] = useState(false);
 
   useEffect(() => {
     setLocalQ(q);
@@ -188,9 +190,45 @@ function Index() {
     setLoading(true);
     const { data } = await supabase
       .from("restaurants")
-      .select("id,name,cuisine,google_rating,note,avg_rating,review_count,created_at");
+      .select(
+        "id,name,cuisine,google_rating,note,avg_rating,review_count,created_at,latitude,longitude,address",
+      );
     setRestaurants((data ?? []) as Restaurant[]);
     setLoading(false);
+  };
+
+  const requestLocation = (thenSortNear = true) => {
+    if (!("geolocation" in navigator)) {
+      toast.error("Geolocation isn't supported on this device.");
+      return;
+    }
+    setLocLoading(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setUserLoc({ lat: pos.coords.latitude, lon: pos.coords.longitude });
+        setLocLoading(false);
+        toast.success("Location set — showing nearest spots.");
+        if (thenSortNear) {
+          navigate({ search: { q, sort: "near", cuisine }, replace: true });
+        }
+      },
+      (err) => {
+        setLocLoading(false);
+        toast.error(
+          err.code === err.PERMISSION_DENIED
+            ? "Location permission denied."
+            : "Couldn't get your location.",
+        );
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 },
+    );
+  };
+
+  const clearLocation = () => {
+    setUserLoc(null);
+    if (sort === "near") {
+      navigate({ search: { q, sort: "popular", cuisine }, replace: true });
+    }
   };
 
   useEffect(() => {
