@@ -255,9 +255,21 @@ function Index() {
       .slice(0, 8);
   }, [restaurants]);
 
+  // Decorate with distance when user location is available
+  const withDistance = useMemo(() => {
+    if (!userLoc) return restaurants.map((r) => ({ ...r, _distance: null as number | null }));
+    return restaurants.map((r) => ({
+      ...r,
+      _distance:
+        r.latitude != null && r.longitude != null
+          ? distanceKm(userLoc.lat, userLoc.lon, r.latitude, r.longitude)
+          : null,
+    }));
+  }, [restaurants, userLoc]);
+
   const filtered = useMemo(() => {
     const term = q.trim().toLowerCase();
-    let list = restaurants.filter((r) => {
+    let list = withDistance.filter((r) => {
       const matchesTerm =
         !term ||
         r.name.toLowerCase().includes(term) ||
@@ -265,6 +277,16 @@ function Index() {
       const matchesCuisine = !cuisine || categoriesFor(r).includes(cuisine);
       return matchesTerm && matchesCuisine;
     });
+
+    if (sort === "near") {
+      // Pin restaurants without coords to the bottom
+      list = [...list].sort((a, b) => {
+        const ad = a._distance ?? Infinity;
+        const bd = b._distance ?? Infinity;
+        return ad - bd;
+      });
+      return list;
+    }
 
     list = [...list].sort((a, b) => {
       switch (sort) {
@@ -287,7 +309,7 @@ function Index() {
       }
     });
     return list;
-  }, [restaurants, q, sort, cuisine]);
+  }, [withDistance, q, sort, cuisine]);
 
   const setSort = (v: SortKey) =>
     navigate({ search: { q, sort: v, cuisine }, replace: true });
