@@ -36,6 +36,7 @@ const SORT_OPTIONS = [
   { value: "top", label: "Highest rated", icon: Trophy },
   { value: "popular", label: "Most reviewed", icon: TrendingUp },
   { value: "newest", label: "Newest", icon: Clock },
+  { value: "near", label: "Nearest to me", icon: Navigation },
   { value: "name", label: "A → Z", icon: ArrowUpDown },
 ] as const;
 
@@ -43,7 +44,7 @@ type SortKey = (typeof SORT_OPTIONS)[number]["value"];
 
 const searchSchema = z.object({
   q: fallback(z.string(), "").default(""),
-  sort: fallback(z.enum(["top", "popular", "newest", "name"]), "popular").default("popular"),
+  sort: fallback(z.enum(["top", "popular", "newest", "near", "name"]), "popular").default("popular"),
   cuisine: fallback(z.string(), "").default(""),
 });
 
