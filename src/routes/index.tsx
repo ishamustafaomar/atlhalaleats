@@ -361,10 +361,15 @@ function Index() {
                   Results for <span className="text-primary">"{q}"</span>
                 </>
               ) : cuisine ? (
-                <>
-                  <span className="mr-2">{emojiFor(cuisine)}</span>
-                  {cuisine}
-                </>
+                (() => {
+                  const cat = CATEGORIES.find((c) => c.key === cuisine);
+                  return (
+                    <>
+                      <span className="mr-2">{cat?.emoji ?? "🍽️"}</span>
+                      {cat?.label ?? cuisine}
+                    </>
+                  );
+                })()
               ) : (
                 "All restaurants"
               )}
@@ -422,7 +427,12 @@ function Index() {
                 }}
               />
             )}
-            {cuisine && <FilterChip label={cuisine} onRemove={() => setCuisine("")} />}
+            {cuisine && (
+              <FilterChip
+                label={CATEGORIES.find((c) => c.key === cuisine)?.label ?? cuisine}
+                onRemove={() => setCuisine("")}
+              />
+            )}
             <button
               onClick={clearFilters}
               className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-4"
