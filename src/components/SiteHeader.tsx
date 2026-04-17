@@ -11,7 +11,7 @@ export function SiteHeader() {
     <header className="sticky top-0 z-40 backdrop-blur-md bg-background/80 border-b border-border">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2 group">
-          <div className="size-9 rounded-xl bg-[var(--gradient-hero)] flex items-center justify-center text-primary-foreground font-display font-bold text-lg shadow-[var(--shadow-glow)]">
+          <div className="size-9 rounded-xl flex items-center justify-center text-primary-foreground font-display font-bold text-lg shadow-[var(--shadow-glow)]" style={{ background: "var(--gradient-hero)" }}>
             ا
           </div>
           <div className="leading-tight">
