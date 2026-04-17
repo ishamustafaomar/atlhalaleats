@@ -185,7 +185,7 @@ function RestaurantPage() {
       </Link>
 
       {/* Hero header */}
-      <div className="rounded-3xl bg-[var(--gradient-card)] border border-border p-6 sm:p-10 shadow-[var(--shadow-soft)]">
+      <div className="rounded-3xl border border-border p-6 sm:p-10 shadow-[var(--shadow-soft)]" style={{ background: "var(--gradient-card)" }}>
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground mb-2">
