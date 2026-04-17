@@ -44,6 +44,8 @@ const searchSchema = z.object({
   cuisine: fallback(z.string(), "").default(""),
 });
 
+type SearchParams = z.infer<typeof searchSchema>;
+
 export const Route = createFileRoute("/")({
   validateSearch: zodValidator(searchSchema),
   component: Index,
