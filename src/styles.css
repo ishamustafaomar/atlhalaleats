@@ -83,14 +83,14 @@
   --secondary: oklch(0.94 0.03 80);          /* warm sand */
   --secondary-foreground: oklch(0.28 0.05 150);
   --muted: oklch(0.95 0.02 85);
-  --muted-foreground: oklch(0.45 0.03 130);
+  --muted-foreground: oklch(0.35 0.04 145);
   --accent: oklch(0.78 0.16 70);             /* saffron */
   --accent-foreground: oklch(0.22 0.04 150);
   --brick: oklch(0.55 0.18 35);
   --destructive: oklch(0.55 0.22 28);
   --destructive-foreground: oklch(0.985 0.012 85);
-  --border: oklch(0.88 0.02 80);
-  --input: oklch(0.92 0.02 80);
+  --border: oklch(0.82 0.025 80);
+  --input: oklch(0.88 0.025 80);
   --ring: oklch(0.55 0.12 155);
   --gradient-hero: linear-gradient(135deg, oklch(0.34 0.07 155) 0%, oklch(0.42 0.10 145) 50%, oklch(0.55 0.16 70) 100%);
   --gradient-card: linear-gradient(180deg, oklch(1 0 0) 0%, oklch(0.97 0.015 80) 100%);

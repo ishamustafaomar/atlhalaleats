@@ -68,13 +68,13 @@ function Index() {
           }}
         />
         <div className="relative max-w-6xl mx-auto px-4 sm:px-6 py-20 sm:py-28">
-          <Badge className="bg-background/15 text-primary-foreground border-background/20 backdrop-blur-sm mb-6">
+          <Badge className="bg-background/20 text-primary-foreground border-background/30 backdrop-blur-sm mb-6">
             <MapPin className="size-3 mr-1" /> Greater Atlanta · {restaurants.length} spots
           </Badge>
-          <h1 className="font-display font-bold text-5xl sm:text-7xl text-primary-foreground max-w-3xl leading-[1.05] text-gray-950">
+          <h1 className="font-display font-bold text-5xl sm:text-7xl text-primary-foreground max-w-3xl leading-[1.05] drop-shadow-[0_2px_12px_rgba(0,0,0,0.35)]">
             Find your next <em className="not-italic text-accent">halal</em> favorite in Atlanta.
           </h1>
-          <p className="mt-6 text-lg text-primary-foreground/80 max-w-xl">
+          <p className="mt-6 text-lg text-primary-foreground/95 max-w-xl drop-shadow-[0_1px_8px_rgba(0,0,0,0.3)]">
             Honest reviews, ratings, and conversation around the city's halal restaurants — from
             shawarma joints to biryani houses.
           </p>
