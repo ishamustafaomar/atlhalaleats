@@ -237,6 +237,24 @@ function Index() {
 
   useEffect(() => {
     load();
+    // Load winners (rank #1) for each poll, to show "Winner" badge on cards
+    (async () => {
+      const { data: polls } = await supabase
+        .from("polls")
+        .select("id, slug, title");
+      if (!polls) return;
+      const map = new Map<string, { pollSlug: string; pollTitle: string }>();
+      await Promise.all(
+        polls.map(async (p) => {
+          const { data: res } = await supabase.rpc("poll_results", { _poll_id: p.id });
+          const top = (res ?? [])[0] as { restaurant_id: string; points: number } | undefined;
+          if (top && top.points > 0 && !map.has(top.restaurant_id)) {
+            map.set(top.restaurant_id, { pollSlug: p.slug, pollTitle: p.title });
+          }
+        }),
+      );
+      setWinners(map);
+    })();
   }, []);
 
   // Build category list with counts based on derived tags
