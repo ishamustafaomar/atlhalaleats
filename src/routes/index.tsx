@@ -311,8 +311,13 @@ function Index() {
     return list;
   }, [withDistance, q, sort, cuisine]);
 
-  const setSort = (v: SortKey) =>
+  const setSort = (v: SortKey) => {
+    if (v === "near" && !userLoc) {
+      requestLocation(true);
+      return;
+    }
     navigate({ search: { q, sort: v, cuisine }, replace: true });
+  };
   const setCuisine = (v: string) =>
     navigate({ search: { q, sort, cuisine: v }, replace: true });
   const clearFilters = () =>
