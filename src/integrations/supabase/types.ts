@@ -72,34 +72,43 @@ export type Database = {
       }
       restaurants: {
         Row: {
+          address: string | null
           avg_rating: number | null
           created_at: string
           created_by: string | null
           cuisine: string | null
           google_rating: number | null
           id: string
+          latitude: number | null
+          longitude: number | null
           name: string
           note: string | null
           review_count: number | null
         }
         Insert: {
+          address?: string | null
           avg_rating?: number | null
           created_at?: string
           created_by?: string | null
           cuisine?: string | null
           google_rating?: number | null
           id?: string
+          latitude?: number | null
+          longitude?: number | null
           name: string
           note?: string | null
           review_count?: number | null
         }
         Update: {
+          address?: string | null
           avg_rating?: number | null
           created_at?: string
           created_by?: string | null
           cuisine?: string | null
           google_rating?: number | null
           id?: string
+          latitude?: number | null
+          longitude?: number | null
           name?: string
           note?: string | null
           review_count?: number | null
