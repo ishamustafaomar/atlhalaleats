@@ -71,7 +71,7 @@ function Index() {
           <Badge className="bg-background/15 text-primary-foreground border-background/20 backdrop-blur-sm mb-6">
             <MapPin className="size-3 mr-1" /> Greater Atlanta · {restaurants.length} spots
           </Badge>
-          <h1 className="font-display font-bold text-5xl sm:text-7xl text-primary-foreground max-w-3xl leading-[1.05]">
+          <h1 className="font-display font-bold text-5xl sm:text-7xl text-primary-foreground max-w-3xl leading-[1.05] text-gray-950">
             Find your next <em className="not-italic text-accent">halal</em> favorite in Atlanta.
           </h1>
           <p className="mt-6 text-lg text-primary-foreground/80 max-w-xl">
