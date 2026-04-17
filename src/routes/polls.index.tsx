@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Vote, Trophy, ArrowRight, Calendar } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
-export const Route = createFileRoute("/polls")({
+export const Route = createFileRoute("/polls/")({
   head: () => ({
     meta: [
       { title: "Weekly Polls — ATL Halal Eats" },
