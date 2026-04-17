@@ -62,38 +62,63 @@ function RestaurantPage() {
       supabase.from("restaurants").select("*").eq("id", id).maybeSingle(),
       supabase
         .from("reviews")
-        .select("id,user_id,rating,body,created_at,profiles(display_name,avatar_url)")
+        .select("id,user_id,rating,body,created_at")
         .eq("restaurant_id", id)
         .order("created_at", { ascending: false }),
     ]);
     setRestaurant(r as Restaurant | null);
-    setReviews((rv as Review[]) ?? []);
 
-    // pre-populate user's existing review into the form
-    if (user && rv) {
-      const mine = (rv as Review[]).find((x) => x.user_id === user.id);
+    const reviewsRaw = (rv ?? []) as Array<Omit<Review, "profiles">>;
+
+    const ids = reviewsRaw.map((x) => x.id);
+    const { data: cs } = ids.length
+      ? await supabase
+          .from("comments")
+          .select("id,review_id,user_id,body,created_at")
+          .in("review_id", ids)
+          .order("created_at", { ascending: true })
+      : { data: [] as Array<Omit<Comment, "profiles">> };
+
+    const commentsRaw = (cs ?? []) as Array<Omit<Comment, "profiles">>;
+
+    const userIds = Array.from(
+      new Set([...reviewsRaw.map((x) => x.user_id), ...commentsRaw.map((x) => x.user_id)])
+    );
+    const profilesMap: Record<string, { display_name: string | null; avatar_url: string | null }> =
+      {};
+    if (userIds.length) {
+      const { data: profs } = await supabase
+        .from("profiles")
+        .select("id,display_name,avatar_url")
+        .in("id", userIds);
+      profs?.forEach((p) => {
+        profilesMap[p.id] = { display_name: p.display_name, avatar_url: p.avatar_url };
+      });
+    }
+
+    const reviewsFinal: Review[] = reviewsRaw.map((x) => ({
+      ...x,
+      profiles: profilesMap[x.user_id] ?? null,
+    }));
+    setReviews(reviewsFinal);
+
+    if (user) {
+      const mine = reviewsFinal.find((x) => x.user_id === user.id);
       if (mine) {
         setMyRating(mine.rating);
         setMyBody(mine.body ?? "");
       }
     }
 
-    // load comments
-    if (rv && rv.length) {
-      const ids = (rv as Review[]).map((x) => x.id);
-      const { data: cs } = await supabase
-        .from("comments")
-        .select("id,review_id,user_id,body,created_at,profiles(display_name,avatar_url)")
-        .in("review_id", ids)
-        .order("created_at", { ascending: true });
-      const grouped: Record<string, Comment[]> = {};
-      (cs as Comment[] | null)?.forEach((c) => {
-        (grouped[c.review_id] ??= []).push(c);
+    const grouped: Record<string, Comment[]> = {};
+    commentsRaw.forEach((c) => {
+      (grouped[c.review_id] ??= []).push({
+        ...c,
+        profiles: profilesMap[c.user_id] ?? null,
       });
-      setCommentsByReview(grouped);
-    } else {
-      setCommentsByReview({});
-    }
+    });
+    setCommentsByReview(grouped);
+
     setLoading(false);
   }, [id, user]);
 
