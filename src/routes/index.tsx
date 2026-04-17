@@ -667,10 +667,18 @@ function FeaturedCard({ restaurant: r, rank }: { restaurant: Restaurant; rank: n
 function RestaurantCard({
   restaurant: r,
   rank,
+  distanceKm: dist,
 }: {
   restaurant: Restaurant;
   rank: number | null;
+  distanceKm?: number | null;
 }) {
+  const distLabel =
+    dist == null
+      ? null
+      : dist < 1
+        ? `${Math.round(dist * 1000)} m`
+        : `${dist.toFixed(dist < 10 ? 1 : 0)} km`;
   return (
     <Link
       to="/restaurant/$id"
@@ -689,6 +697,11 @@ function RestaurantCard({
         <span className="text-5xl group-hover:scale-110 transition-transform">
           {emojiFor(r)}
         </span>
+        {distLabel && (
+          <div className="absolute top-3 left-3 z-10 inline-flex items-center gap-1 bg-primary text-primary-foreground text-xs font-bold px-2.5 py-1 rounded-full shadow-md">
+            <Navigation className="size-3" /> {distLabel}
+          </div>
+        )}
         {r.google_rating && (
           <div className="absolute top-3 right-3 bg-background/95 text-foreground text-xs font-bold px-2.5 py-1 rounded-full backdrop-blur shadow-sm">
             ★ {r.google_rating}
