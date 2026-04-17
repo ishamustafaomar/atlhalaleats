@@ -17,7 +17,10 @@ import {
   Clock,
   Trophy,
   ChevronRight,
+  Navigation,
+  Loader2,
 } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { AddRestaurantDialog } from "@/components/AddRestaurantDialog";
 import { useAuth } from "@/lib/auth";
