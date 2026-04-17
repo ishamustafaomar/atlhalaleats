@@ -9,20 +9,20 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as PollsRouteImport } from './routes/polls'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as PollsIndexRouteImport } from './routes/polls.index'
 import { Route as RestaurantIdRouteImport } from './routes/restaurant.$id'
 import { Route as PollsSlugRouteImport } from './routes/polls.$slug'
 import { Route as AdminPollsRouteImport } from './routes/admin.polls'
 
-const PollsRoute = PollsRouteImport.update({
-  id: '/polls',
-  path: '/polls',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PollsIndexRoute = PollsIndexRouteImport.update({
+  id: '/polls/',
+  path: '/polls/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RestaurantIdRoute = RestaurantIdRouteImport.update({
@@ -31,9 +31,9 @@ const RestaurantIdRoute = RestaurantIdRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 const PollsSlugRoute = PollsSlugRouteImport.update({
-  id: '/$slug',
-  path: '/$slug',
-  getParentRoute: () => PollsRoute,
+  id: '/polls/$slug',
+  path: '/polls/$slug',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AdminPollsRoute = AdminPollsRouteImport.update({
   id: '/admin/polls',
@@ -43,66 +43,67 @@ const AdminPollsRoute = AdminPollsRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/polls': typeof PollsRouteWithChildren
   '/admin/polls': typeof AdminPollsRoute
   '/polls/$slug': typeof PollsSlugRoute
   '/restaurant/$id': typeof RestaurantIdRoute
+  '/polls/': typeof PollsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/polls': typeof PollsRouteWithChildren
   '/admin/polls': typeof AdminPollsRoute
   '/polls/$slug': typeof PollsSlugRoute
   '/restaurant/$id': typeof RestaurantIdRoute
+  '/polls': typeof PollsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/polls': typeof PollsRouteWithChildren
   '/admin/polls': typeof AdminPollsRoute
   '/polls/$slug': typeof PollsSlugRoute
   '/restaurant/$id': typeof RestaurantIdRoute
+  '/polls/': typeof PollsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/polls'
     | '/admin/polls'
     | '/polls/$slug'
     | '/restaurant/$id'
+    | '/polls/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/polls' | '/admin/polls' | '/polls/$slug' | '/restaurant/$id'
+  to: '/' | '/admin/polls' | '/polls/$slug' | '/restaurant/$id' | '/polls'
   id:
     | '__root__'
     | '/'
-    | '/polls'
     | '/admin/polls'
     | '/polls/$slug'
     | '/restaurant/$id'
+    | '/polls/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  PollsRoute: typeof PollsRouteWithChildren
   AdminPollsRoute: typeof AdminPollsRoute
+  PollsSlugRoute: typeof PollsSlugRoute
   RestaurantIdRoute: typeof RestaurantIdRoute
+  PollsIndexRoute: typeof PollsIndexRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/polls': {
-      id: '/polls'
-      path: '/polls'
-      fullPath: '/polls'
-      preLoaderRoute: typeof PollsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/': {
       id: '/'
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/polls/': {
+      id: '/polls/'
+      path: '/polls'
+      fullPath: '/polls/'
+      preLoaderRoute: typeof PollsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/restaurant/$id': {
@@ -114,10 +115,10 @@ declare module '@tanstack/react-router' {
     }
     '/polls/$slug': {
       id: '/polls/$slug'
-      path: '/$slug'
+      path: '/polls/$slug'
       fullPath: '/polls/$slug'
       preLoaderRoute: typeof PollsSlugRouteImport
-      parentRoute: typeof PollsRoute
+      parentRoute: typeof rootRouteImport
     }
     '/admin/polls': {
       id: '/admin/polls'
@@ -129,22 +130,22 @@ declare module '@tanstack/react-router' {
   }
 }
 
-interface PollsRouteChildren {
-  PollsSlugRoute: typeof PollsSlugRoute
-}
-
-const PollsRouteChildren: PollsRouteChildren = {
-  PollsSlugRoute: PollsSlugRoute,
-}
-
-const PollsRouteWithChildren = PollsRoute._addFileChildren(PollsRouteChildren)
-
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  PollsRoute: PollsRouteWithChildren,
   AdminPollsRoute: AdminPollsRoute,
+  PollsSlugRoute: PollsSlugRoute,
   RestaurantIdRoute: RestaurantIdRoute,
+  PollsIndexRoute: PollsIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}
