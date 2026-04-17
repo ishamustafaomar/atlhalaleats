@@ -60,41 +60,67 @@ type Restaurant = {
   created_at: string;
 };
 
-// Map cuisine names → emoji icons for visual interest
-const CUISINE_EMOJI: Record<string, string> = {
-  Mediterranean: "🥙",
-  Pakistani: "🍛",
-  Indian: "🍛",
-  Lebanese: "🧆",
-  Turkish: "🥘",
-  Yemeni: "🍖",
-  Afghan: "🥟",
-  Persian: "🍢",
-  Egyptian: "🥙",
-  Moroccan: "🍲",
-  American: "🍔",
-  Mexican: "🌮",
-  Asian: "🥡",
-  Chinese: "🥢",
-  Thai: "🍜",
-  Korean: "🍱",
-  Pizza: "🍕",
-  Burger: "🍔",
-  Chicken: "🍗",
-  Seafood: "🦐",
-  Bakery: "🥐",
-  Cafe: "☕",
-  Dessert: "🍰",
-  BBQ: "🍖",
-  Halal: "🕌",
+// Smart category system. Each category matches restaurants by keywords found in
+// either the cuisine field or the restaurant name. Order matters — more specific
+// categories first so things like "Persian Kebab" tag as Persian, not Kebab.
+type Category = {
+  key: string;
+  label: string;
+  emoji: string;
+  // case-insensitive substrings to match against name + cuisine
+  match: string[];
 };
 
-function emojiFor(cuisine: string | null): string {
-  if (!cuisine) return "🍽️";
-  for (const key of Object.keys(CUISINE_EMOJI)) {
-    if (cuisine.toLowerCase().includes(key.toLowerCase())) return CUISINE_EMOJI[key];
+const CATEGORIES: Category[] = [
+  { key: "biryani", label: "Biryani", emoji: "🍛", match: ["biryani", "bawarchi"] },
+  { key: "shawarma", label: "Shawarma", emoji: "🌯", match: ["shawarma", "shwarma", "schawarma"] },
+  { key: "kebab", label: "Kebab", emoji: "🍢", match: ["kebab", "kabob", "kabab", "souvlaki"] },
+  { key: "mediterranean", label: "Mediterranean", emoji: "🥙", match: ["mediterranean", "greek", "athens", "aviva"] },
+  { key: "lebanese", label: "Lebanese", emoji: "🧆", match: ["lebanese", "falafel", "baraka"] },
+  { key: "turkish", label: "Turkish", emoji: "🥘", match: ["turkish", "turk", "ottoman", "anatolia"] },
+  { key: "persian", label: "Persian", emoji: "🍢", match: ["persian", "iranian", "chelo", "kabob house", "farsi", "delbar", "dyar"] },
+  { key: "afghan", label: "Afghan", emoji: "🥟", match: ["afghan", "kabul"] },
+  { key: "yemeni", label: "Yemeni", emoji: "🍖", match: ["yemen", "yemeni", "mandi", "azouma"] },
+  { key: "egyptian", label: "Egyptian", emoji: "🥙", match: ["egyptian", "egypt"] },
+  { key: "moroccan", label: "Moroccan", emoji: "🍲", match: ["moroccan", "tagine", "marrakech"] },
+  { key: "syrian", label: "Syrian / Iraqi", emoji: "🫓", match: ["syrian", "iraqi", "damascus", "aleppo"] },
+  { key: "arab", label: "Arab / Middle Eastern", emoji: "🕌", match: ["arab", "middle eastern", "halal kitchen"] },
+  { key: "pakistani", label: "Pakistani", emoji: "🍛", match: ["pakistani", "karachi", "lahore", "desi"] },
+  { key: "indian", label: "Indian", emoji: "🍛", match: ["indian", "curry", "tandoor", "masala", "dhaba"] },
+  { key: "asian", label: "Asian", emoji: "🥢", match: ["asian", "fusion asian", "bistro"] },
+  { key: "chinese", label: "Chinese", emoji: "🥡", match: ["chinese", "wok", "dragon", "panda"] },
+  { key: "thai", label: "Thai", emoji: "🍜", match: ["thai", "pad", "tom yum"] },
+  { key: "korean", label: "Korean", emoji: "🍱", match: ["korean", "kimchi", "bulgogi"] },
+  { key: "japanese", label: "Japanese / Sushi", emoji: "🍣", match: ["sushi", "japanese", "ramen", "budi"] },
+  { key: "mexican", label: "Mexican", emoji: "🌮", match: ["mexican", "taco", "burrito", "arepa", "cocinita"] },
+  { key: "burger", label: "Burgers", emoji: "🍔", match: ["burger", "cheesesteak", "smash"] },
+  { key: "chicken", label: "Chicken", emoji: "🍗", match: ["chicken", "wing", "fried", "boss wings", "chick'n", "fryd"] },
+  { key: "pizza", label: "Pizza", emoji: "🍕", match: ["pizza", "pizzeria"] },
+  { key: "bbq", label: "BBQ & Grill", emoji: "🍖", match: ["bbq", "grill", "smoke", "briskfire"] },
+  { key: "seafood", label: "Seafood", emoji: "🦐", match: ["seafood", "fish", "shrimp", "crab"] },
+  { key: "cafe", label: "Cafe & Coffee", emoji: "☕", match: ["cafe", "coffee", "café"] },
+  { key: "bakery", label: "Bakery & Sweets", emoji: "🥐", match: ["bakery", "bake", "pastry", "dessert", "cake", "sweet", "cone"] },
+  { key: "soul", label: "Soul / Southern", emoji: "🍗", match: ["soul", "southern", "auntie", "kitchen"] },
+];
+
+function categoriesFor(r: { name: string; cuisine: string | null }): string[] {
+  const haystack = `${r.name} ${r.cuisine ?? ""}`.toLowerCase();
+  const tags: string[] = [];
+  for (const cat of CATEGORIES) {
+    if (cat.match.some((m) => haystack.includes(m))) {
+      tags.push(cat.key);
+    }
   }
-  return "🍽️";
+  return tags;
+}
+
+function emojiFor(r: { name: string; cuisine: string | null } | string | null): string {
+  if (!r) return "🍽️";
+  const obj = typeof r === "string" ? { name: "", cuisine: r } : r;
+  const tags = categoriesFor(obj);
+  if (tags.length === 0) return "🍽️";
+  const cat = CATEGORIES.find((c) => c.key === tags[0]);
+  return cat?.emoji ?? "🍽️";
 }
 
 // Generate a stable accent gradient per card
@@ -147,14 +173,17 @@ function Index() {
     load();
   }, []);
 
-  const cuisines = useMemo(() => {
+  // Build category list with counts based on derived tags
+  const categoryList = useMemo(() => {
     const counts = new Map<string, number>();
     restaurants.forEach((r) => {
-      if (r.cuisine) counts.set(r.cuisine, (counts.get(r.cuisine) ?? 0) + 1);
+      categoriesFor(r).forEach((tag) => {
+        counts.set(tag, (counts.get(tag) ?? 0) + 1);
+      });
     });
-    return Array.from(counts.entries())
-      .sort((a, b) => b[1] - a[1])
-      .map(([name, count]) => ({ name, count }));
+    return CATEGORIES.filter((c) => (counts.get(c.key) ?? 0) > 0)
+      .map((c) => ({ ...c, count: counts.get(c.key) ?? 0 }))
+      .sort((a, b) => b.count - a.count);
   }, [restaurants]);
 
   const featured = useMemo(() => {
@@ -171,7 +200,7 @@ function Index() {
         !term ||
         r.name.toLowerCase().includes(term) ||
         (r.cuisine ?? "").toLowerCase().includes(term);
-      const matchesCuisine = !cuisine || r.cuisine === cuisine;
+      const matchesCuisine = !cuisine || categoriesFor(r).includes(cuisine);
       return matchesTerm && matchesCuisine;
     });
 
@@ -281,13 +310,13 @@ function Index() {
               label="All"
               count={restaurants.length}
             />
-            {cuisines.map((c) => (
+            {categoryList.map((c) => (
               <CuisinePill
-                key={c.name}
-                active={cuisine === c.name}
-                onClick={() => setCuisine(c.name)}
-                emoji={emojiFor(c.name)}
-                label={c.name}
+                key={c.key}
+                active={cuisine === c.key}
+                onClick={() => setCuisine(c.key)}
+                emoji={c.emoji}
+                label={c.label}
                 count={c.count}
               />
             ))}
@@ -332,10 +361,15 @@ function Index() {
                   Results for <span className="text-primary">"{q}"</span>
                 </>
               ) : cuisine ? (
-                <>
-                  <span className="mr-2">{emojiFor(cuisine)}</span>
-                  {cuisine}
-                </>
+                (() => {
+                  const cat = CATEGORIES.find((c) => c.key === cuisine);
+                  return (
+                    <>
+                      <span className="mr-2">{cat?.emoji ?? "🍽️"}</span>
+                      {cat?.label ?? cuisine}
+                    </>
+                  );
+                })()
               ) : (
                 "All restaurants"
               )}
@@ -393,7 +427,12 @@ function Index() {
                 }}
               />
             )}
-            {cuisine && <FilterChip label={cuisine} onRemove={() => setCuisine("")} />}
+            {cuisine && (
+              <FilterChip
+                label={CATEGORIES.find((c) => c.key === cuisine)?.label ?? cuisine}
+                onRemove={() => setCuisine("")}
+              />
+            )}
             <button
               onClick={clearFilters}
               className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-4"
@@ -486,7 +525,7 @@ function FeaturedCard({ restaurant: r, rank }: { restaurant: Restaurant; rank: n
       <div
         className={`relative h-32 bg-gradient-to-br ${gradientFor(r.id)} flex items-center justify-center`}
       >
-        <span className="text-6xl">{emojiFor(r.cuisine)}</span>
+        <span className="text-6xl">{emojiFor(r)}</span>
         <div className="absolute top-3 left-3 flex items-center gap-1 bg-foreground/90 text-background text-xs font-bold px-2.5 py-1 rounded-full backdrop-blur">
           <Trophy className="size-3 text-accent" /> #{rank}
         </div>
@@ -533,7 +572,7 @@ function RestaurantCard({
         className={`relative h-28 bg-gradient-to-br ${gradientFor(r.id)} flex items-center justify-center overflow-hidden`}
       >
         <span className="text-5xl group-hover:scale-110 transition-transform">
-          {emojiFor(r.cuisine)}
+          {emojiFor(r)}
         </span>
         {r.google_rating && (
           <div className="absolute top-3 right-3 bg-background/95 text-foreground text-xs font-bold px-2.5 py-1 rounded-full backdrop-blur shadow-sm">
