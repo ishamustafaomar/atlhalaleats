@@ -478,6 +478,27 @@ function Index() {
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
+            <Button
+              variant={userLoc ? "default" : "outline"}
+              onClick={() => (userLoc ? clearLocation() : requestLocation(true))}
+              disabled={locLoading}
+              className={`h-11 rounded-xl ${
+                userLoc
+                  ? "bg-primary text-primary-foreground hover:bg-primary/90"
+                  : "bg-card border-border hover:border-primary/40"
+              }`}
+            >
+              {locLoading ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <Navigation className={`size-4 ${userLoc ? "" : "text-primary"}`} />
+              )}
+              <span className="hidden sm:inline">
+                {userLoc ? "Using your location" : "Near me"}
+              </span>
+              {userLoc && <X className="size-3.5 opacity-80 ml-1" />}
+            </Button>
+
             <Select value={sort} onValueChange={(v) => setSort(v as SortKey)}>
               <SelectTrigger className="h-11 w-[200px] bg-card border-border rounded-xl">
                 <ArrowUpDown className="size-4 text-muted-foreground" />
@@ -485,7 +506,11 @@ function Index() {
               </SelectTrigger>
               <SelectContent>
                 {SORT_OPTIONS.map((o) => (
-                  <SelectItem key={o.value} value={o.value}>
+                  <SelectItem
+                    key={o.value}
+                    value={o.value}
+                    disabled={o.value === "near" && !userLoc && locLoading}
+                  >
                     <span className="flex items-center gap-2">
                       <o.icon className="size-3.5" />
                       {o.label}
