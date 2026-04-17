@@ -44,8 +44,6 @@ const searchSchema = z.object({
   cuisine: fallback(z.string(), "").default(""),
 });
 
-type SearchParams = z.infer<typeof searchSchema>;
-
 export const Route = createFileRoute("/")({
   validateSearch: zodValidator(searchSchema),
   component: Index,
@@ -130,7 +128,7 @@ function Index() {
   useEffect(() => {
     const t = setTimeout(() => {
       if (localQ !== q) {
-        navigate({ search: (prev: SearchParams) => ({ ...prev, q: localQ }), replace: true });
+        navigate({ search: { q: localQ, sort, cuisine }, replace: true });
       }
     }, 250);
     return () => clearTimeout(t);
@@ -201,9 +199,9 @@ function Index() {
   }, [restaurants, q, sort, cuisine]);
 
   const setSort = (v: SortKey) =>
-    navigate({ search: (prev: SearchParams) => ({ ...prev, sort: v }), replace: true });
+    navigate({ search: { q, sort: v, cuisine }, replace: true });
   const setCuisine = (v: string) =>
-    navigate({ search: (prev: SearchParams) => ({ ...prev, cuisine: v }), replace: true });
+    navigate({ search: { q, sort, cuisine: v }, replace: true });
   const clearFilters = () =>
     navigate({ search: { q: "", sort: "popular", cuisine: "" }, replace: true });
 
@@ -391,7 +389,7 @@ function Index() {
                 label={`"${q}"`}
                 onRemove={() => {
                   setLocalQ("");
-                  navigate({ search: (prev: SearchParams) => ({ ...prev, q: "" }), replace: true });
+                  navigate({ search: { q: "", sort, cuisine }, replace: true });
                 }}
               />
             )}
