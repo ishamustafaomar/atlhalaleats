@@ -525,7 +525,7 @@ function FeaturedCard({ restaurant: r, rank }: { restaurant: Restaurant; rank: n
       <div
         className={`relative h-32 bg-gradient-to-br ${gradientFor(r.id)} flex items-center justify-center`}
       >
-        <span className="text-6xl">{emojiFor(r.cuisine)}</span>
+        <span className="text-6xl">{emojiFor(r)}</span>
         <div className="absolute top-3 left-3 flex items-center gap-1 bg-foreground/90 text-background text-xs font-bold px-2.5 py-1 rounded-full backdrop-blur">
           <Trophy className="size-3 text-accent" /> #{rank}
         </div>
@@ -572,7 +572,7 @@ function RestaurantCard({
         className={`relative h-28 bg-gradient-to-br ${gradientFor(r.id)} flex items-center justify-center overflow-hidden`}
       >
         <span className="text-5xl group-hover:scale-110 transition-transform">
-          {emojiFor(r.cuisine)}
+          {emojiFor(r)}
         </span>
         {r.google_rating && (
           <div className="absolute top-3 right-3 bg-background/95 text-foreground text-xs font-bold px-2.5 py-1 rounded-full backdrop-blur shadow-sm">
