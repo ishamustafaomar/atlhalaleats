@@ -81,41 +81,28 @@ function PollDetail() {
       if (cancelled) return;
       setPoll(p);
 
-      // Auto from category: pull all restaurants likely to serve this dish.
-      // Many restaurants don't have the cuisine column tagged with the exact
-      // dish (e.g. "shawarma"), so we cast a wider net by matching name,
-      // cuisine, or note — and fall back to halal/mediterranean spots that
-      // typically serve the dish.
-      const cuisineTerm = (p.cuisine ?? "").trim();
-      // Map well-known dishes to related cuisine keywords
+      // Auto from category: fetch all restaurants and filter client-side.
+      // (Server .or() filters with many keywords blow up the URL length.)
+      const { data: allRestaurants } = await supabase
+        .from("restaurants")
+        .select("id,name,cuisine,note,avg_rating,review_count")
+        .order("avg_rating", { ascending: false });
+      if (cancelled) return;
+
+      const cuisineTerm = (p.cuisine ?? "").trim().toLowerCase();
       const relatedKeywords: Record<string, string[]> = {
-        shawarma: ["shawarma", "mediterranean", "halal", "arab", "lebanese", "syrian", "turkish", "kebab"],
+        shawarma: ["shawarma", "mediterranean", "halal", "arab", "lebanese", "syrian", "turkish", "kebab", "yemen", "persian"],
         biryani: ["biryani", "indian", "pakistani", "halal", "hyderabad"],
         kebab: ["kebab", "turkish", "persian", "mediterranean", "halal", "arab"],
         mediterranean: ["mediterranean", "lebanese", "greek", "halal", "arab"],
       };
-      const keywords = relatedKeywords[cuisineTerm.toLowerCase()] ?? [
-        cuisineTerm,
-      ];
-      let query = supabase
-        .from("restaurants")
-        .select("id,name,cuisine,avg_rating,review_count");
-      if (cuisineTerm) {
-        const filters = keywords
-          .filter(Boolean)
-          .flatMap((kw) => [
-            `cuisine.ilike.%${kw}%`,
-            `name.ilike.%${kw}%`,
-            `note.ilike.%${kw}%`,
-          ])
-          .join(",");
-        query = query.or(filters);
-      }
-      const { data: rData } = await query.order("avg_rating", {
-        ascending: false,
+      const keywords = (relatedKeywords[cuisineTerm] ?? [cuisineTerm]).filter(Boolean);
+      const matches = (allRestaurants ?? []).filter((r) => {
+        if (!cuisineTerm) return true;
+        const hay = `${r.name ?? ""} ${r.cuisine ?? ""} ${r.note ?? ""}`.toLowerCase();
+        return keywords.some((kw) => hay.includes(kw));
       });
-      if (cancelled) return;
-      setCandidates((rData ?? []) as Restaurant[]);
+      setCandidates(matches as Restaurant[]);
 
       // Load existing vote
       if (user) {
