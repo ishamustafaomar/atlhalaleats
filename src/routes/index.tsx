@@ -23,6 +23,7 @@ import {
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { AddRestaurantDialog } from "@/components/AddRestaurantDialog";
+import { PollBanner } from "@/components/PollBanner";
 import { useAuth } from "@/lib/auth";
 import {
   Select,
@@ -172,6 +173,9 @@ function Index() {
   const [localQ, setLocalQ] = useState(q);
   const [userLoc, setUserLoc] = useState<{ lat: number; lon: number } | null>(null);
   const [locLoading, setLocLoading] = useState(false);
+  const [winners, setWinners] = useState<Map<string, { pollSlug: string; pollTitle: string }>>(
+    new Map(),
+  );
 
   useEffect(() => {
     setLocalQ(q);
