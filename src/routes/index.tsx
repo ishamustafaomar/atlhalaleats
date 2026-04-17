@@ -173,14 +173,17 @@ function Index() {
     load();
   }, []);
 
-  const cuisines = useMemo(() => {
+  // Build category list with counts based on derived tags
+  const categoryList = useMemo(() => {
     const counts = new Map<string, number>();
     restaurants.forEach((r) => {
-      if (r.cuisine) counts.set(r.cuisine, (counts.get(r.cuisine) ?? 0) + 1);
+      categoriesFor(r).forEach((tag) => {
+        counts.set(tag, (counts.get(tag) ?? 0) + 1);
+      });
     });
-    return Array.from(counts.entries())
-      .sort((a, b) => b[1] - a[1])
-      .map(([name, count]) => ({ name, count }));
+    return CATEGORIES.filter((c) => (counts.get(c.key) ?? 0) > 0)
+      .map((c) => ({ ...c, count: counts.get(c.key) ?? 0 }))
+      .sort((a, b) => b.count - a.count);
   }, [restaurants]);
 
   const featured = useMemo(() => {
@@ -197,7 +200,7 @@ function Index() {
         !term ||
         r.name.toLowerCase().includes(term) ||
         (r.cuisine ?? "").toLowerCase().includes(term);
-      const matchesCuisine = !cuisine || r.cuisine === cuisine;
+      const matchesCuisine = !cuisine || categoriesFor(r).includes(cuisine);
       return matchesTerm && matchesCuisine;
     });
 
