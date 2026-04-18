@@ -24,6 +24,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { AddRestaurantDialog } from "@/components/AddRestaurantDialog";
 import { PollBanner } from "@/components/PollBanner";
+import { RestaurantLogo } from "@/components/RestaurantLogo";
 import { useAuth } from "@/lib/auth";
 import {
   Select,
@@ -66,6 +67,7 @@ type Restaurant = {
   latitude: number | null;
   longitude: number | null;
   address: string | null;
+  logo_url: string | null;
 };
 
 // Haversine distance in kilometers
@@ -195,7 +197,7 @@ function Index() {
     const { data } = await supabase
       .from("restaurants")
       .select(
-        "id,name,cuisine,google_rating,note,avg_rating,review_count,created_at,latitude,longitude,address",
+        "id,name,cuisine,google_rating,note,avg_rating,review_count,created_at,latitude,longitude,address,logo_url",
       );
     setRestaurants((data ?? []) as Restaurant[]);
     setLoading(false);
