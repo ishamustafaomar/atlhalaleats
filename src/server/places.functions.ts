@@ -245,10 +245,13 @@ export const backfillRestaurantDetails = createServerFn({ method: "POST" })
       }
       let q = supabaseAdmin
         .from("restaurants")
-        .select("id,name,address,latitude,longitude,details_fetched_at")
+        .select("id,name,address,latitude,longitude,details_fetched_at,photo_urls")
         .order("created_at", { ascending: true })
         .limit(data.limit);
-      if (data.onlyMissing) q = q.is("details_fetched_at", null);
+      // "missing" = never fetched OR no photos yet (so we backfill photos onto previously-enriched rows)
+      if (data.onlyMissing) {
+        q = q.or("details_fetched_at.is.null,photo_urls.is.null,photo_urls.eq.{}");
+      }
       const { data: rows, error } = await q;
       if (error) {
         return {
