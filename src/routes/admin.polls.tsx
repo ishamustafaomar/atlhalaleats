@@ -142,6 +142,21 @@ function AdminPolls() {
       <h1 className="font-display font-bold text-3xl mb-6">Manage polls</h1>
 
       <div className="p-6 rounded-2xl border border-border bg-card mb-10">
+        <div className="flex items-start justify-between gap-4 flex-wrap">
+          <div>
+            <h2 className="font-display font-bold text-lg">Restaurant info backfill</h2>
+            <p className="text-sm text-muted-foreground mt-1">
+              Auto-fetch hours, phone, website, price, plus code and service options from Google Places.
+              Runs 50 at a time. {backfillStats && `Last run: +${backfillStats.enriched} enriched, ${backfillStats.remaining} left.`}
+            </p>
+          </div>
+          <Button onClick={runBackfill} disabled={backfilling} variant="outline">
+            <Sparkles className="size-4" /> {backfilling ? "Fetching…" : "Run backfill (50)"}
+          </Button>
+        </div>
+      </div>
+
+      <div className="p-6 rounded-2xl border border-border bg-card mb-10">
         <h2 className="font-display font-bold text-lg mb-4">New poll</h2>
         <div className="grid sm:grid-cols-2 gap-4">
           <div>
