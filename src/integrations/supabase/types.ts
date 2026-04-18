@@ -198,6 +198,7 @@ export type Database = {
           note: string | null
           opening_hours: Json | null
           phone: string | null
+          photo_urls: string[] | null
           place_id: string | null
           plus_code: string | null
           price_level: number | null
@@ -222,6 +223,7 @@ export type Database = {
           note?: string | null
           opening_hours?: Json | null
           phone?: string | null
+          photo_urls?: string[] | null
           place_id?: string | null
           plus_code?: string | null
           price_level?: number | null
@@ -246,6 +248,7 @@ export type Database = {
           note?: string | null
           opening_hours?: Json | null
           phone?: string | null
+          photo_urls?: string[] | null
           place_id?: string | null
           plus_code?: string | null
           price_level?: number | null
