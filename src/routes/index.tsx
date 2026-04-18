@@ -524,26 +524,49 @@ function Index() {
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            <Button
-              variant={userLoc ? "default" : "outline"}
-              onClick={() => (userLoc ? clearLocation() : requestLocation(true))}
-              disabled={locLoading}
-              className={`h-11 rounded-xl ${
-                userLoc
-                  ? "bg-primary text-primary-foreground hover:bg-primary/90"
-                  : "bg-card border-border hover:border-primary/40"
-              }`}
-            >
-              {locLoading ? (
-                <Loader2 className="size-4 animate-spin" />
-              ) : (
-                <Navigation className={`size-4 ${userLoc ? "" : "text-primary"}`} />
-              )}
-              <span className="hidden sm:inline">
-                {userLoc ? "Using your location" : "Near me"}
-              </span>
-              {userLoc && <X className="size-3.5 opacity-80 ml-1" />}
-            </Button>
+            <div className="inline-flex items-center rounded-xl border border-border bg-card overflow-hidden h-11">
+              <button
+                type="button"
+                onClick={() => (userLoc ? clearLocation() : requestLocation({ thenSortNear: true }))}
+                disabled={locLoading}
+                className={`h-full px-3 inline-flex items-center gap-1.5 text-sm font-medium transition-colors ${
+                  userLoc
+                    ? "bg-primary text-primary-foreground"
+                    : "hover:bg-muted text-foreground"
+                }`}
+                aria-label={userLoc ? "Clear location" : "Use my location"}
+              >
+                {locLoading ? (
+                  <Loader2 className="size-4 animate-spin" />
+                ) : (
+                  <Navigation className={`size-4 ${userLoc ? "" : "text-primary"}`} />
+                )}
+                <span className="hidden sm:inline">
+                  {userLoc ? "Near me" : "Near me"}
+                </span>
+                {userLoc && <X className="size-3.5 opacity-80 ml-0.5" />}
+              </button>
+              <div className="h-6 w-px bg-border" />
+              {NEAR_OPTIONS.map((o) => {
+                const active = nearMin === o.value;
+                return (
+                  <button
+                    key={o.value}
+                    type="button"
+                    onClick={() => setNearMin(active ? "" : o.value)}
+                    disabled={locLoading}
+                    className={`h-full px-3 text-xs font-semibold tabular-nums transition-colors ${
+                      active
+                        ? "bg-foreground text-background"
+                        : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                    }`}
+                    aria-pressed={active}
+                  >
+                    {o.label}
+                  </button>
+                );
+              })}
+            </div>
 
             <Select value={sort} onValueChange={(v) => setSort(v as SortKey)}>
               <SelectTrigger className="h-11 w-[200px] bg-card border-border rounded-xl">
