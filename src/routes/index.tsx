@@ -606,7 +606,7 @@ function Index() {
                 label={`"${q}"`}
                 onRemove={() => {
                   setLocalQ("");
-                  navigate({ search: { q: "", sort, cuisine }, replace: true });
+                  navigate({ search: { q: "", sort, cuisine, nearMin }, replace: true });
                 }}
               />
             )}
@@ -614,6 +614,12 @@ function Index() {
               <FilterChip
                 label={CATEGORIES.find((c) => c.key === cuisine)?.label ?? cuisine}
                 onRemove={() => setCuisine("")}
+              />
+            )}
+            {nearMin && (
+              <FilterChip
+                label={`Within ${nearMin} min`}
+                onRemove={() => setNearMin("")}
               />
             )}
             <button
