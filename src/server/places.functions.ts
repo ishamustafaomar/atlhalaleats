@@ -25,7 +25,11 @@ const FIELD_MASK = [
   "places.servesDinner",
   "places.menuForChildren",
   "places.plusCode",
+  "places.photos",
 ].join(",");
+
+const MAX_PHOTOS = 6;
+const PHOTO_MAX_WIDTH = 1200;
 
 type PlaceResult = {
   id?: string;
@@ -55,6 +59,7 @@ type PlaceResult = {
   servesLunch?: boolean;
   servesDinner?: boolean;
   plusCode?: { compoundCode?: string; globalCode?: string };
+  photos?: { name?: string; widthPx?: number; heightPx?: number }[];
 };
 
 const PRICE_LEVEL_MAP: Record<string, number> = {
