@@ -669,8 +669,9 @@ function FeaturedCard({ restaurant: r, rank }: { restaurant: Restaurant; rank: n
         <RestaurantLogo
           name={r.name}
           logoUrl={r.logo_url}
+          cuisine={r.cuisine}
           emoji={emojiFor(r)}
-          emojiSize="text-7xl"
+          emojiSize="text-5xl"
           className="size-full"
         />
         {r.logo_url && (
@@ -734,9 +735,10 @@ function RestaurantCard({
         <RestaurantLogo
           name={r.name}
           logoUrl={r.logo_url}
+          cuisine={r.cuisine}
           emoji={emojiFor(r)}
-          emojiSize="text-6xl"
-          className="size-full group-hover:scale-105 transition-transform duration-500"
+          emojiSize="text-5xl"
+          className="size-full"
         />
         {r.logo_url && (
           <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/55 to-transparent pointer-events-none" />
