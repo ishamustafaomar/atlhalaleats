@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { useIsAdmin } from "@/hooks/use-admin";
@@ -9,7 +10,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Trash2, Lock } from "lucide-react";
+import { Trash2, Lock, Sparkles } from "lucide-react";
+import { backfillRestaurantDetails } from "@/server/places.functions";
 
 export const Route = createFileRoute("/admin/polls")({
   component: AdminPolls,
