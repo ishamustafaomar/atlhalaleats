@@ -37,6 +37,22 @@ function AdminPolls() {
     description: "",
   });
   const [saving, setSaving] = useState(false);
+  const [backfilling, setBackfilling] = useState(false);
+  const [backfillStats, setBackfillStats] = useState<{ enriched: number; missed: number; remaining: number } | null>(null);
+  const backfillFn = useServerFn(backfillRestaurantDetails);
+
+  const runBackfill = async () => {
+    setBackfilling(true);
+    try {
+      const res = await backfillFn({ data: { onlyMissing: true, limit: 50 } });
+      setBackfillStats(res);
+      toast.success(`Enriched ${res.enriched}, missed ${res.missed}. ${res.remaining} left.`);
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setBackfilling(false);
+    }
+  };
 
   const load = () =>
     supabase
