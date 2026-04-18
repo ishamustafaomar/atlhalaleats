@@ -28,6 +28,20 @@ type Restaurant = {
   address: string | null;
   latitude: number | null;
   longitude: number | null;
+  phone: string | null;
+  website: string | null;
+  menu_url: string | null;
+  price_level: number | null;
+  opening_hours: { weekday?: string[]; open_now?: boolean | null } | null;
+  service_options: {
+    dine_in?: boolean | null;
+    takeout?: boolean | null;
+    delivery?: boolean | null;
+    reservable?: boolean | null;
+  } | null;
+  plus_code: string | null;
+  place_id: string | null;
+  details_fetched_at: string | null;
 };
 
 type Review = {
