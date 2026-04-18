@@ -140,31 +140,51 @@ export const enrichRestaurant = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { restaurantId: string }) => {
     if (!input?.restaurantId || typeof input.restaurantId !== "string") {
-      throw new Error("restaurantId is required");
+      return { restaurantId: "" };
     }
     return input;
   })
   .handler(async ({ data }) => {
-    const { data: r, error } = await supabaseAdmin
-      .from("restaurants")
-      .select("id,name,address,latitude,longitude")
-      .eq("id", data.restaurantId)
-      .maybeSingle();
-    if (error) throw new Error(error.message);
-    if (!r) throw new Error("Restaurant not found");
+    try {
+      if (!data.restaurantId) {
+        return { ok: false as const, reason: "restaurantId required" };
+      }
+      if (!process.env.GOOGLE_PLACES_API_KEY) {
+        console.error("[enrichRestaurant] GOOGLE_PLACES_API_KEY missing");
+        return { ok: false as const, reason: "Places API key not configured" };
+      }
 
-    const query = r.address ? `${r.name}, ${r.address}` : `${r.name} Atlanta GA`;
-    const place = await searchPlace(query, r.latitude, r.longitude);
-    if (!place) return { ok: false as const, reason: "No Places match" };
+      const { data: r, error } = await supabaseAdmin
+        .from("restaurants")
+        .select("id,name,address,latitude,longitude")
+        .eq("id", data.restaurantId)
+        .maybeSingle();
+      if (error) {
+        console.error("[enrichRestaurant] DB lookup failed:", error.message);
+        return { ok: false as const, reason: `DB error: ${error.message}` };
+      }
+      if (!r) return { ok: false as const, reason: "Restaurant not found" };
 
-    const update = mapPlaceToColumns(place);
-    const { error: upErr } = await supabaseAdmin
-      .from("restaurants")
-      .update(update)
-      .eq("id", data.restaurantId);
-    if (upErr) throw new Error(upErr.message);
+      const query = r.address ? `${r.name}, ${r.address}` : `${r.name} Atlanta GA`;
+      const place = await searchPlace(query, r.latitude, r.longitude);
+      if (!place) return { ok: false as const, reason: "No Places match" };
 
-    return { ok: true as const, place_id: update.place_id };
+      const update = mapPlaceToColumns(place);
+      const { error: upErr } = await supabaseAdmin
+        .from("restaurants")
+        .update(update)
+        .eq("id", data.restaurantId);
+      if (upErr) {
+        console.error("[enrichRestaurant] DB update failed:", upErr.message);
+        return { ok: false as const, reason: `DB update error: ${upErr.message}` };
+      }
+
+      return { ok: true as const, place_id: update.place_id };
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      console.error("[enrichRestaurant] unhandled:", msg);
+      return { ok: false as const, reason: msg };
+    }
   });
 
 /** Backfill ALL restaurants that have not been enriched yet. Returns counts. */
