@@ -212,7 +212,7 @@ function Index() {
     setLoading(false);
   };
 
-  const requestLocation = (thenSortNear = true) => {
+  const requestLocation = (opts?: { thenSortNear?: boolean; thenNearMin?: "" | "5" | "10" | "40" }) => {
     if (!("geolocation" in navigator)) {
       toast.error("Geolocation isn't supported on this device.");
       return;
@@ -223,8 +223,10 @@ function Index() {
         setUserLoc({ lat: pos.coords.latitude, lon: pos.coords.longitude });
         setLocLoading(false);
         toast.success("Location set — showing nearest spots.");
-        if (thenSortNear) {
-          navigate({ search: { q, sort: "near", cuisine }, replace: true });
+        if (opts?.thenSortNear) {
+          navigate({ search: { q, sort: "near", cuisine, nearMin }, replace: true });
+        } else if (opts?.thenNearMin !== undefined) {
+          navigate({ search: { q, sort, cuisine, nearMin: opts.thenNearMin }, replace: true });
         }
       },
       (err) => {
@@ -241,8 +243,8 @@ function Index() {
 
   const clearLocation = () => {
     setUserLoc(null);
-    if (sort === "near") {
-      navigate({ search: { q, sort: "popular", cuisine }, replace: true });
+    if (sort === "near" || nearMin) {
+      navigate({ search: { q, sort: sort === "near" ? "popular" : sort, cuisine, nearMin: "" }, replace: true });
     }
   };
 
