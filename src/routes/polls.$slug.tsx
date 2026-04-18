@@ -43,6 +43,7 @@ type Restaurant = {
   avg_rating: number | null;
   review_count: number | null;
   logo_url: string | null;
+  photo_urls: string[] | null;
 };
 
 type ResultRow = {
@@ -85,7 +86,7 @@ function PollDetail() {
       // (Server .or() filters with many keywords blow up the URL length.)
       const { data: allRestaurants } = await supabase
         .from("restaurants")
-        .select("id,name,cuisine,note,avg_rating,review_count,logo_url")
+        .select("id,name,cuisine,note,avg_rating,review_count,logo_url,photo_urls")
         .order("avg_rating", { ascending: false });
       if (cancelled) return;
 
