@@ -344,10 +344,15 @@ export const backfillRestaurantDetails = createServerFn({ method: "POST" })
             continue;
           }
           const update = mapPlaceToColumns(place);
-          const photo_urls = await resolvePhotoUrls(
+          let photo_urls = await resolvePhotoUrls(
             place.photos,
             process.env.GOOGLE_PLACES_API_KEY!,
           );
+          if (photo_urls.length === 0) {
+            photo_urls = await firecrawlImageSearch(
+              `${r.name} ${r.address ?? "Atlanta GA"} restaurant`,
+            );
+          }
           const { error: upErr } = await supabaseAdmin
             .from("restaurants")
             .update({ ...update, ...(photo_urls.length ? { photo_urls } : {}) })
