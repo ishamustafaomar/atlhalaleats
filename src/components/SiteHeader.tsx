@@ -4,6 +4,7 @@ import { useIsAdmin } from "@/hooks/use-admin";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { LogOut, Vote } from "lucide-react";
+import logoUrl from "@/assets/atl-halal-eats-logo.png";
 
 export function SiteHeader() {
   const { user, signInWithGoogle, signOut, loading } = useAuth();
@@ -13,9 +14,11 @@ export function SiteHeader() {
     <header className="sticky top-0 z-40 backdrop-blur-md bg-background/80 border-b border-border">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2 group">
-          <div className="size-9 rounded-xl flex items-center justify-center text-primary-foreground font-display font-bold text-lg shadow-[var(--shadow-glow)]" style={{ background: "var(--gradient-hero)" }}>
-            ا
-          </div>
+          <img
+            src={logoUrl}
+            alt="ATL Halal Eats logo"
+            className="size-10 rounded-xl object-cover shadow-[var(--shadow-glow)]"
+          />
           <div className="leading-tight">
             <div className="font-display font-bold text-lg text-foreground">ATL Halal Eats</div>
             <div className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
