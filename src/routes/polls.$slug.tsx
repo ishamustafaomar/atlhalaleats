@@ -282,6 +282,7 @@ function PollDetail() {
                       <RestaurantLogo
                         name={r.name}
                         logoUrl={r.logo_url}
+                        photoUrls={r.photo_urls}
                         emoji="🍽️"
                         emojiSize="text-xl"
                         className="size-10 rounded-lg bg-muted shrink-0"
@@ -378,6 +379,7 @@ function PollDetail() {
                         <RestaurantLogo
                           name={r.name}
                           logoUrl={r.logo_url}
+                          photoUrls={r.photo_urls}
                           emoji="🍽️"
                           emojiSize="text-xl"
                           className="size-10 rounded-lg bg-muted shrink-0"
