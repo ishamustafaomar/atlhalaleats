@@ -27,6 +27,7 @@ export function AddRestaurantDialog({
   onAdded: () => void;
 }) {
   const { user } = useAuth();
+  const enrichFn = useServerFn(enrichRestaurant);
   const [name, setName] = useState("");
   const [cuisine, setCuisine] = useState("");
   const [note, setNote] = useState("");
