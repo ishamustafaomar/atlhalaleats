@@ -102,6 +102,35 @@ async function searchPlace(query: string, biasLat?: number | null, biasLng?: num
   return json.places?.[0] ?? null;
 }
 
+/**
+ * Resolve a Google Places photo "name" (e.g. "places/XYZ/photos/ABC") to a stable
+ * googleusercontent.com URL by following the redirect from the media endpoint.
+ * We store the final URL so the client never needs the API key.
+ */
+async function resolvePhotoUrls(
+  photos: PlaceResult["photos"],
+  apiKey: string,
+): Promise<string[]> {
+  if (!photos?.length) return [];
+  const picks = photos.slice(0, MAX_PHOTOS);
+  const out: string[] = [];
+  for (const p of picks) {
+    if (!p.name) continue;
+    const mediaUrl = `https://places.googleapis.com/v1/${p.name}/media?maxWidthPx=${PHOTO_MAX_WIDTH}&skipHttpRedirect=true`;
+    try {
+      const res = await fetch(mediaUrl, {
+        headers: { "X-Goog-Api-Key": apiKey },
+      });
+      if (!res.ok) continue;
+      const json = (await res.json()) as { photoUri?: string };
+      if (json.photoUri) out.push(json.photoUri);
+    } catch {
+      // skip this photo
+    }
+  }
+  return out;
+}
+
 function mapPlaceToColumns(p: PlaceResult) {
   const opening_hours = p.currentOpeningHours?.weekdayDescriptions?.length
     ? {
