@@ -7,7 +7,22 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, MessageSquare, Trash2, MapPin } from "lucide-react";
+import {
+  ArrowLeft,
+  MessageSquare,
+  Trash2,
+  MapPin,
+  Phone,
+  Globe,
+  Clock,
+  Utensils,
+  ShoppingBag,
+  Bike,
+  CalendarCheck,
+  Sparkles,
+} from "lucide-react";
+import { useServerFn } from "@tanstack/react-start";
+import { enrichRestaurant } from "@/server/places.functions";
 import { RestaurantLogo } from "@/components/RestaurantLogo";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
