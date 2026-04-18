@@ -43,6 +43,7 @@ type Restaurant = {
   cuisine: string | null;
   avg_rating: number | null;
   review_count: number | null;
+  logo_url: string | null;
 };
 
 type ResultRow = {
@@ -85,7 +86,7 @@ function PollDetail() {
       // (Server .or() filters with many keywords blow up the URL length.)
       const { data: allRestaurants } = await supabase
         .from("restaurants")
-        .select("id,name,cuisine,note,avg_rating,review_count")
+        .select("id,name,cuisine,note,avg_rating,review_count,logo_url")
         .order("avg_rating", { ascending: false });
       if (cancelled) return;
 
@@ -102,7 +103,16 @@ function PollDetail() {
         const hay = `${r.name ?? ""} ${r.cuisine ?? ""} ${r.note ?? ""}`.toLowerCase();
         return keywords.some((kw) => hay.includes(kw));
       });
-      setCandidates(matches as Restaurant[]);
+      // Cap at top 10 — sorted by avg_rating from the query, ties broken by review_count
+      const top10 = matches
+        .sort((a, b) => {
+          const ar = Number(a.avg_rating ?? 0);
+          const br = Number(b.avg_rating ?? 0);
+          if (br !== ar) return br - ar;
+          return (b.review_count ?? 0) - (a.review_count ?? 0);
+        })
+        .slice(0, 10);
+      setCandidates(top10 as Restaurant[]);
 
       // Load existing vote
       if (user) {
