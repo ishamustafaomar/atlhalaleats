@@ -664,19 +664,22 @@ function FeaturedCard({ restaurant: r, rank }: { restaurant: Restaurant; rank: n
       className="group shrink-0 w-[280px] sm:w-[320px] snap-start rounded-3xl overflow-hidden border border-border bg-card shadow-[var(--shadow-soft)] hover:shadow-[var(--shadow-glow)] hover:-translate-y-1 transition-all"
     >
       <div
-        className={`relative h-32 bg-gradient-to-br ${gradientFor(r.id)} flex items-center justify-center`}
+        className={`relative h-44 sm:h-48 bg-gradient-to-br ${gradientFor(r.id)} flex items-center justify-center overflow-hidden`}
       >
         <RestaurantLogo
           name={r.name}
           logoUrl={r.logo_url}
           emoji={emojiFor(r)}
-          emojiSize="text-6xl"
+          emojiSize="text-7xl"
           className="size-full"
         />
-        <div className="absolute top-3 left-3 flex items-center gap-1 bg-foreground/90 text-background text-xs font-bold px-2.5 py-1 rounded-full backdrop-blur">
+        {r.logo_url && (
+          <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/55 to-transparent pointer-events-none" />
+        )}
+        <div className="absolute top-3 left-3 z-10 flex items-center gap-1 bg-foreground/90 text-background text-xs font-bold px-2.5 py-1 rounded-full backdrop-blur">
           <Trophy className="size-3 text-accent" /> #{rank}
         </div>
-        <div className="absolute top-3 right-3 bg-background/90 text-foreground text-xs font-bold px-2.5 py-1 rounded-full backdrop-blur">
+        <div className="absolute top-3 right-3 z-10 bg-background/90 text-foreground text-xs font-bold px-2.5 py-1 rounded-full backdrop-blur">
           ★ {Number(r.avg_rating ?? 0).toFixed(1)}
         </div>
       </div>
@@ -724,24 +727,27 @@ function RestaurantCard({
           <Trophy className="size-3" /> #{rank}
         </div>
       )}
-      {/* Visual header */}
+      {/* Visual header — full photo when uploaded, gradient + emoji otherwise */}
       <div
-        className={`relative h-28 bg-gradient-to-br ${gradientFor(r.id)} flex items-center justify-center overflow-hidden`}
+        className={`relative h-48 sm:h-52 bg-gradient-to-br ${gradientFor(r.id)} flex items-center justify-center overflow-hidden`}
       >
         <RestaurantLogo
           name={r.name}
           logoUrl={r.logo_url}
           emoji={emojiFor(r)}
-          emojiSize="text-5xl"
-          className="size-full group-hover:scale-105 transition-transform"
+          emojiSize="text-6xl"
+          className="size-full group-hover:scale-105 transition-transform duration-500"
         />
+        {r.logo_url && (
+          <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/55 to-transparent pointer-events-none" />
+        )}
         {distLabel && (
           <div className="absolute top-3 left-3 z-10 inline-flex items-center gap-1 bg-primary text-primary-foreground text-xs font-bold px-2.5 py-1 rounded-full shadow-md">
             <Navigation className="size-3" /> {distLabel}
           </div>
         )}
         {r.google_rating && (
-          <div className="absolute top-3 right-3 bg-background/95 text-foreground text-xs font-bold px-2.5 py-1 rounded-full backdrop-blur shadow-sm">
+          <div className="absolute top-3 right-3 z-10 bg-background/95 text-foreground text-xs font-bold px-2.5 py-1 rounded-full backdrop-blur shadow-sm">
             ★ {r.google_rating}
           </div>
         )}
