@@ -368,7 +368,7 @@ function Index() {
   const clearFilters = () =>
     navigate({ search: { q: "", sort: "popular", cuisine: "", nearMin: "" }, replace: true });
 
-  const hasFilters = q || cuisine || sort !== "popular";
+  const hasFilters = q || cuisine || sort !== "popular" || nearMin;
   const showFeatured = !hasFilters && featured.length >= 4;
 
   return (
