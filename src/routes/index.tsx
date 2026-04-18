@@ -471,7 +471,7 @@ function Index() {
                 label={`"${q}"`}
                 onRemove={() => {
                   setLocalQ("");
-                  navigate({ search: { q: "", sort, cuisine }, replace: true });
+                  navigate({ search: { q: "", sort, cuisine }, replace: true, resetScroll: false });
                 }}
               />
             )}
