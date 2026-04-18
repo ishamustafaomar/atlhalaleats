@@ -25,6 +25,9 @@ type Restaurant = {
   avg_rating: number | null;
   review_count: number | null;
   logo_url: string | null;
+  address: string | null;
+  latitude: number | null;
+  longitude: number | null;
 };
 
 type Review = {
