@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { StarRating } from "@/components/StarRating";
 import {
   Search,
+  MapPin,
   Plus,
   ArrowUpDown,
   X,
