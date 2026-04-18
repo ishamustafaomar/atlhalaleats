@@ -283,7 +283,7 @@ function Index() {
   const clearFilters = () =>
     navigate({ search: { q: "", sort: "popular", cuisine: "" }, replace: true });
 
-  const hasFilters = q || cuisine || sort !== "popular" || nearMin;
+  const hasFilters = q || cuisine || sort !== "popular";
   const showFeatured = !hasFilters && featured.length >= 4;
 
   return (
@@ -473,7 +473,7 @@ function Index() {
                 label={`"${q}"`}
                 onRemove={() => {
                   setLocalQ("");
-                  navigate({ search: { q: "", sort, cuisine, nearMin }, replace: true });
+                  navigate({ search: { q: "", sort, cuisine }, replace: true });
                 }}
               />
             )}
@@ -481,12 +481,6 @@ function Index() {
               <FilterChip
                 label={CATEGORIES.find((c) => c.key === cuisine)?.label ?? cuisine}
                 onRemove={() => setCuisine("")}
-              />
-            )}
-            {nearMin && (
-              <FilterChip
-                label={`Within ${nearMin} min`}
-                onRemove={() => setNearMin("")}
               />
             )}
             <button
@@ -508,29 +502,16 @@ function Index() {
             ))}
           </div>
         ) : filtered.length === 0 ? (
-          (() => {
-            const noCoordsAtAll =
-              userLoc &&
-              (sort === "near" || nearMin) &&
-              restaurants.length > 0 &&
-              restaurants.every((r) => r.latitude == null || r.longitude == null);
-            return (
-              <div className="text-center py-24 rounded-3xl border border-dashed border-border bg-card/40">
-                <div className="text-5xl mb-3">{noCoordsAtAll ? "📍" : "🤷"}</div>
-                <p className="font-display text-2xl text-foreground">
-                  {noCoordsAtAll ? "No locations on file yet" : "No restaurants match"}
-                </p>
-                <p className="text-sm text-muted-foreground mt-2 max-w-md mx-auto">
-                  {noCoordsAtAll
-                    ? "Restaurants need to be enriched with Google Places before distance filtering works. An admin can run the backfill on /admin/polls."
-                    : "Try a different cuisine, widen the radius, or clear your filters."}
-                </p>
-                <Button onClick={clearFilters} variant="outline" className="mt-6 rounded-xl">
-                  Clear filters
-                </Button>
-              </div>
-            );
-          })()
+          <div className="text-center py-24 rounded-3xl border border-dashed border-border bg-card/40">
+            <div className="text-5xl mb-3">🤷</div>
+            <p className="font-display text-2xl text-foreground">No restaurants match</p>
+            <p className="text-sm text-muted-foreground mt-2 max-w-md mx-auto">
+              Try a different cuisine or clear your filters.
+            </p>
+            <Button onClick={clearFilters} variant="outline" className="mt-6 rounded-xl">
+              Clear filters
+            </Button>
+          </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {filtered.map((r, idx) => (
@@ -538,7 +519,7 @@ function Index() {
                 key={r.id}
                 restaurant={r}
                 rank={sort === "top" && idx < 3 ? idx + 1 : null}
-                distanceKm={r._distance ?? null}
+                distanceKm={null}
                 winner={winners.get(r.id) ?? null}
               />
             ))}
