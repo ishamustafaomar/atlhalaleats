@@ -38,7 +38,20 @@ function AdminPolls() {
   });
   const [saving, setSaving] = useState(false);
   const [backfilling, setBackfilling] = useState(false);
-  const [backfillStats, setBackfillStats] = useState<{ enriched: number; missed: number; remaining: number } | null>(null);
+  const [backfillStats, setBackfillStats] = useState<{
+    enriched: number;
+    missed: number;
+    remaining: number;
+  } | null>(null);
+  const stopRequestedRef = useRef(false);
+  const [autoBackfilling, setAutoBackfilling] = useState(false);
+  const [autoProgress, setAutoProgress] = useState<{
+    batches: number;
+    enriched: number;
+    missed: number;
+    remaining: number;
+    total: number;
+  } | null>(null);
   const backfillFn = useServerFn(backfillRestaurantDetails);
 
   const runBackfill = async () => {
@@ -51,6 +64,64 @@ function AdminPolls() {
       toast.error((e as Error).message);
     } finally {
       setBackfilling(false);
+    }
+  };
+
+  const runBackfillAll = async () => {
+    if (autoBackfilling) {
+      stopRequestedRef.current = true;
+      return;
+    }
+    stopRequestedRef.current = false;
+    setAutoBackfilling(true);
+    let batches = 0;
+    let totalEnriched = 0;
+    let totalMissed = 0;
+    let initialRemaining = 0;
+    let lastRemaining = Infinity;
+    let stagnantRuns = 0;
+    try {
+      while (true) {
+        const res = await backfillFn({ data: { onlyMissing: true, limit: 50 } });
+        batches += 1;
+        totalEnriched += res.enriched;
+        totalMissed += res.missed;
+        if (initialRemaining === 0) {
+          // First batch: estimate the total backlog (already-processed in batch 1 + remaining).
+          initialRemaining = res.enriched + res.missed + res.remaining;
+        }
+        setAutoProgress({
+          batches,
+          enriched: totalEnriched,
+          missed: totalMissed,
+          remaining: res.remaining,
+          total: initialRemaining,
+        });
+        setBackfillStats(res);
+
+        if (res.remaining === 0) break;
+        if (stopRequestedRef.current) break;
+
+        if (res.enriched + res.missed === 0 || res.remaining >= lastRemaining) {
+          stagnantRuns += 1;
+          if (stagnantRuns >= 2) {
+            toast.warning("Backfill stalled — some restaurants can't be matched on Google.");
+            break;
+          }
+        } else {
+          stagnantRuns = 0;
+        }
+        lastRemaining = res.remaining;
+        await new Promise((r) => setTimeout(r, 300));
+      }
+      toast.success(
+        `Done. ${batches} batch${batches === 1 ? "" : "es"}, +${totalEnriched} enriched.`,
+      );
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setAutoBackfilling(false);
+      stopRequestedRef.current = false;
     }
   };
 
