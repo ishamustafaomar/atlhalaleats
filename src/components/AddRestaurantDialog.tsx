@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import {
@@ -13,7 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { Navigation, Loader2, Check } from "lucide-react";
+import { Navigation, Loader2, Check, ImagePlus, X } from "lucide-react";
 
 export function AddRestaurantDialog({
   open,
@@ -32,6 +32,9 @@ export function AddRestaurantDialog({
   const [coords, setCoords] = useState<{ lat: number; lon: number } | null>(null);
   const [locLoading, setLocLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const captureLocation = () => {
     if (!("geolocation" in navigator)) {
@@ -57,18 +60,56 @@ export function AddRestaurantDialog({
     );
   };
 
+  const onPickLogo = (file: File | null) => {
+    if (!file) {
+      setLogoFile(null);
+      setLogoPreview(null);
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Image must be under 5MB.");
+      return;
+    }
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please select an image file.");
+      return;
+    }
+    setLogoFile(file);
+    setLogoPreview(URL.createObjectURL(file));
+  };
+
   const reset = () => {
     setName("");
     setCuisine("");
     setNote("");
     setAddress("");
     setCoords(null);
+    setLogoFile(null);
+    setLogoPreview(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user || !name.trim()) return;
     setSubmitting(true);
+
+    let logo_url: string | null = null;
+    if (logoFile) {
+      const ext = logoFile.name.split(".").pop()?.toLowerCase() || "jpg";
+      const path = `${user.id}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+      const { error: upErr } = await supabase.storage
+        .from("restaurant-logos")
+        .upload(path, logoFile, { cacheControl: "3600", upsert: false });
+      if (upErr) {
+        setSubmitting(false);
+        toast.error(`Logo upload failed: ${upErr.message}`);
+        return;
+      }
+      const { data: pub } = supabase.storage.from("restaurant-logos").getPublicUrl(path);
+      logo_url = pub.publicUrl;
+    }
+
     const { error } = await supabase.from("restaurants").insert({
       name: name.trim(),
       cuisine: cuisine.trim() || "Halal restaurant",
@@ -76,6 +117,7 @@ export function AddRestaurantDialog({
       address: address.trim() || null,
       latitude: coords?.lat ?? null,
       longitude: coords?.lon ?? null,
+      logo_url,
       created_by: user.id,
     });
     setSubmitting(false);
@@ -91,7 +133,7 @@ export function AddRestaurantDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="font-display">Add a halal restaurant</DialogTitle>
           <DialogDescription>
@@ -99,6 +141,45 @@ export function AddRestaurantDialog({
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={submit} className="space-y-4">
+          {/* Logo upload */}
+          <div>
+            <Label>Logo / photo (optional)</Label>
+            <div className="mt-1.5 flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="relative size-20 rounded-2xl border-2 border-dashed border-border hover:border-primary/50 bg-muted/40 flex items-center justify-center overflow-hidden shrink-0"
+              >
+                {logoPreview ? (
+                  <img src={logoPreview} alt="Logo preview" className="size-full object-cover" />
+                ) : (
+                  <ImagePlus className="size-6 text-muted-foreground" />
+                )}
+              </button>
+              <div className="flex-1">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => onPickLogo(e.target.files?.[0] ?? null)}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Upload the actual restaurant logo or a storefront photo. PNG/JPG, up to 5MB.
+                </p>
+                {logoPreview && (
+                  <button
+                    type="button"
+                    onClick={() => onPickLogo(null)}
+                    className="mt-1 text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1"
+                  >
+                    <X className="size-3" /> Remove
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+
           <div>
             <Label htmlFor="name">Name</Label>
             <Input id="name" value={name} onChange={(e) => setName(e.target.value)} required />

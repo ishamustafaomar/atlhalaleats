@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, MessageSquare, Trash2 } from "lucide-react";
+import { RestaurantLogo } from "@/components/RestaurantLogo";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 
@@ -23,6 +24,7 @@ type Restaurant = {
   note: string | null;
   avg_rating: number | null;
   review_count: number | null;
+  logo_url: string | null;
 };
 
 type Review = {
@@ -187,13 +189,22 @@ function RestaurantPage() {
       {/* Hero header */}
       <div className="rounded-3xl border border-border p-6 sm:p-10 shadow-[var(--shadow-soft)]" style={{ background: "var(--gradient-card)" }}>
         <div className="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground mb-2">
-              {restaurant.cuisine}
-            </p>
-            <h1 className="font-display font-bold text-4xl sm:text-5xl text-foreground leading-tight">
-              {restaurant.name}
-            </h1>
+          <div className="flex items-start gap-4 min-w-0">
+            <RestaurantLogo
+              name={restaurant.name}
+              logoUrl={restaurant.logo_url}
+              emoji="🍽️"
+              emojiSize="text-3xl"
+              className="size-20 rounded-2xl bg-background border border-border shadow-sm shrink-0"
+            />
+            <div className="min-w-0">
+              <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground mb-2">
+                {restaurant.cuisine}
+              </p>
+              <h1 className="font-display font-bold text-4xl sm:text-5xl text-foreground leading-tight">
+                {restaurant.name}
+              </h1>
+            </div>
           </div>
           {restaurant.google_rating && (
             <Badge className="bg-accent/15 text-foreground border-accent/30 text-base px-3 py-1.5">
