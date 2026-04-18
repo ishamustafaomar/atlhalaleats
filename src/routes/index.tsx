@@ -304,16 +304,19 @@ function Index() {
 
   const filtered = useMemo(() => {
     const term = q.trim().toLowerCase();
+    const radiusKm = nearMin && userLoc ? Number(nearMin) * KM_PER_MIN : null;
     let list = withDistance.filter((r) => {
       const matchesTerm =
         !term ||
         r.name.toLowerCase().includes(term) ||
         (r.cuisine ?? "").toLowerCase().includes(term);
       const matchesCuisine = !cuisine || categoriesFor(r).includes(cuisine);
-      return matchesTerm && matchesCuisine;
+      const matchesRadius =
+        radiusKm == null || (r._distance != null && r._distance <= radiusKm);
+      return matchesTerm && matchesCuisine && matchesRadius;
     });
 
-    if (sort === "near") {
+    if (sort === "near" || (radiusKm != null)) {
       // Pin restaurants without coords to the bottom
       list = [...list].sort((a, b) => {
         const ad = a._distance ?? Infinity;
@@ -344,19 +347,26 @@ function Index() {
       }
     });
     return list;
-  }, [withDistance, q, sort, cuisine]);
+  }, [withDistance, q, sort, cuisine, nearMin, userLoc]);
 
   const setSort = (v: SortKey) => {
     if (v === "near" && !userLoc) {
-      requestLocation(true);
+      requestLocation({ thenSortNear: true });
       return;
     }
-    navigate({ search: { q, sort: v, cuisine }, replace: true });
+    navigate({ search: { q, sort: v, cuisine, nearMin }, replace: true });
   };
   const setCuisine = (v: string) =>
-    navigate({ search: { q, sort, cuisine: v }, replace: true });
+    navigate({ search: { q, sort, cuisine: v, nearMin }, replace: true });
+  const setNearMin = (v: "" | "5" | "10" | "40") => {
+    if (v && !userLoc) {
+      requestLocation({ thenNearMin: v });
+      return;
+    }
+    navigate({ search: { q, sort, cuisine, nearMin: v }, replace: true });
+  };
   const clearFilters = () =>
-    navigate({ search: { q: "", sort: "popular", cuisine: "" }, replace: true });
+    navigate({ search: { q: "", sort: "popular", cuisine: "", nearMin: "" }, replace: true });
 
   const hasFilters = q || cuisine || sort !== "popular";
   const showFeatured = !hasFilters && featured.length >= 4;
