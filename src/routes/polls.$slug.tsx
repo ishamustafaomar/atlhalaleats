@@ -4,15 +4,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { RestaurantLogo } from "@/components/RestaurantLogo";
 import { toast } from "sonner";
 import {
   Vote,
   Trophy,
   ArrowLeft,
   X,
-  GripVertical,
   Calendar,
-  Check,
 } from "lucide-react";
 
 export const Route = createFileRoute("/polls/$slug")({
@@ -279,6 +278,13 @@ function PollDetail() {
                       <div className="size-8 rounded-lg bg-primary text-primary-foreground font-bold text-sm flex items-center justify-center shrink-0">
                         {idx + 1}
                       </div>
+                      <RestaurantLogo
+                        name={r.name}
+                        logoUrl={r.logo_url}
+                        emoji="🍽️"
+                        emojiSize="text-xl"
+                        className="size-10 rounded-lg bg-muted shrink-0"
+                      />
                       <div className="flex-1 min-w-0">
                         <div className="font-semibold text-sm truncate">{r.name}</div>
                         {r.cuisine && (
@@ -366,8 +372,15 @@ function PollDetail() {
                               : "bg-muted text-muted-foreground"
                           }`}
                         >
-                          {picked ? rankIdx + 1 : <Check className="size-4 opacity-0" />}
+                          {picked ? rankIdx + 1 : "·"}
                         </div>
+                        <RestaurantLogo
+                          name={r.name}
+                          logoUrl={r.logo_url}
+                          emoji="🍽️"
+                          emojiSize="text-xl"
+                          className="size-10 rounded-lg bg-muted shrink-0"
+                        />
                         <div className="flex-1 min-w-0">
                           <div className="font-semibold text-sm truncate">{r.name}</div>
                           {r.cuisine && (
