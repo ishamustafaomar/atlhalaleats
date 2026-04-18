@@ -405,6 +405,10 @@ function PollDetail() {
         </div>
       ) : (
         <div>
+          <p className="text-xs text-muted-foreground mb-4">
+            Ranked-choice voting: the candidate with the fewest top-choice votes is eliminated each
+            round and their voters' next pick is counted, until one restaurant has a majority.
+          </p>
           {results.length === 0 ? (
             <div className="border border-dashed border-border rounded-xl p-12 text-center text-muted-foreground">
               No votes yet. Be the first!
@@ -445,10 +449,13 @@ function PollDetail() {
                       </div>
                       <div className="text-right shrink-0">
                         <div className="font-display font-bold text-lg">
-                          {r.points} <span className="text-xs font-normal text-muted-foreground">pts</span>
+                          {r.points}{" "}
+                          <span className="text-xs font-normal text-muted-foreground">
+                            1st-place
+                          </span>
                         </div>
                         <div className="text-xs text-muted-foreground">
-                          {r.vote_count} {r.vote_count === 1 ? "vote" : "votes"}
+                          {r.vote_count} {r.vote_count === 1 ? "ballot" : "ballots"}
                         </div>
                       </div>
                     </div>
