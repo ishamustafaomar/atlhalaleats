@@ -204,16 +204,20 @@ export const enrichRestaurant = createServerFn({ method: "POST" })
       if (!place) return { ok: false as const, reason: "No Places match" };
 
       const update = mapPlaceToColumns(place);
+      const photo_urls = await resolvePhotoUrls(
+        place.photos,
+        process.env.GOOGLE_PLACES_API_KEY,
+      );
       const { error: upErr } = await supabaseAdmin
         .from("restaurants")
-        .update(update)
+        .update({ ...update, ...(photo_urls.length ? { photo_urls } : {}) })
         .eq("id", data.restaurantId);
       if (upErr) {
         console.error("[enrichRestaurant] DB update failed:", upErr.message);
         return { ok: false as const, reason: `DB update error: ${upErr.message}` };
       }
 
-      return { ok: true as const, place_id: update.place_id };
+      return { ok: true as const, place_id: update.place_id, photos: photo_urls.length };
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       console.error("[enrichRestaurant] unhandled:", msg);
@@ -273,9 +277,13 @@ export const backfillRestaurantDetails = createServerFn({ method: "POST" })
             continue;
           }
           const update = mapPlaceToColumns(place);
+          const photo_urls = await resolvePhotoUrls(
+            place.photos,
+            process.env.GOOGLE_PLACES_API_KEY!,
+          );
           const { error: upErr } = await supabaseAdmin
             .from("restaurants")
-            .update(update)
+            .update({ ...update, ...(photo_urls.length ? { photo_urls } : {}) })
             .eq("id", r.id);
           if (upErr) throw upErr;
           enriched++;
