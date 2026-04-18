@@ -187,14 +187,23 @@ export type Database = {
           created_at: string
           created_by: string | null
           cuisine: string | null
+          details_fetched_at: string | null
           google_rating: number | null
           id: string
           latitude: number | null
           logo_url: string | null
           longitude: number | null
+          menu_url: string | null
           name: string
           note: string | null
+          opening_hours: Json | null
+          phone: string | null
+          place_id: string | null
+          plus_code: string | null
+          price_level: number | null
           review_count: number | null
+          service_options: Json | null
+          website: string | null
         }
         Insert: {
           address?: string | null
@@ -202,14 +211,23 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           cuisine?: string | null
+          details_fetched_at?: string | null
           google_rating?: number | null
           id?: string
           latitude?: number | null
           logo_url?: string | null
           longitude?: number | null
+          menu_url?: string | null
           name: string
           note?: string | null
+          opening_hours?: Json | null
+          phone?: string | null
+          place_id?: string | null
+          plus_code?: string | null
+          price_level?: number | null
           review_count?: number | null
+          service_options?: Json | null
+          website?: string | null
         }
         Update: {
           address?: string | null
@@ -217,14 +235,23 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           cuisine?: string | null
+          details_fetched_at?: string | null
           google_rating?: number | null
           id?: string
           latitude?: number | null
           logo_url?: string | null
           longitude?: number | null
+          menu_url?: string | null
           name?: string
           note?: string | null
+          opening_hours?: Json | null
+          phone?: string | null
+          place_id?: string | null
+          plus_code?: string | null
+          price_level?: number | null
           review_count?: number | null
+          service_options?: Json | null
+          website?: string | null
         }
         Relationships: []
       }
