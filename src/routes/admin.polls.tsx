@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
@@ -214,16 +214,60 @@ function AdminPolls() {
 
       <div className="p-6 rounded-2xl border border-border bg-card mb-10">
         <div className="flex items-start justify-between gap-4 flex-wrap">
-          <div>
+          <div className="min-w-0 flex-1">
             <h2 className="font-display font-bold text-lg">Restaurant info backfill</h2>
             <p className="text-sm text-muted-foreground mt-1">
-              Auto-fetch hours, phone, website, price, plus code and service options from Google Places.
-              Runs 50 at a time. {backfillStats && `Last run: +${backfillStats.enriched} enriched, ${backfillStats.remaining} left.`}
+              Auto-fetch hours, phone, website, price, photos and service options from Google Places.
+              {backfillStats && !autoBackfilling
+                ? ` Last run: +${backfillStats.enriched} enriched, ${backfillStats.remaining} left.`
+                : ""}
             </p>
+
+            {autoBackfilling && autoProgress && (
+              <div className="mt-4">
+                <div className="flex items-center justify-between text-xs text-muted-foreground mb-1.5">
+                  <span>
+                    Batch {autoProgress.batches} · {autoProgress.enriched} enriched ·{" "}
+                    {autoProgress.missed} missed
+                  </span>
+                  <span>{autoProgress.remaining} remaining</span>
+                </div>
+                <div className="h-2 rounded-full bg-secondary overflow-hidden">
+                  <div
+                    className="h-full bg-primary transition-[width] duration-500"
+                    style={{
+                      width: `${
+                        autoProgress.total > 0
+                          ? Math.min(
+                              100,
+                              ((autoProgress.total - autoProgress.remaining) /
+                                autoProgress.total) *
+                                100,
+                            )
+                          : 0
+                      }%`,
+                    }}
+                  />
+                </div>
+              </div>
+            )}
           </div>
-          <Button onClick={runBackfill} disabled={backfilling} variant="outline">
-            <Sparkles className="size-4" /> {backfilling ? "Fetching…" : "Run backfill (50)"}
-          </Button>
+          <div className="flex items-center gap-2 shrink-0">
+            <Button
+              onClick={runBackfill}
+              disabled={backfilling || autoBackfilling}
+              variant="outline"
+            >
+              <Sparkles className="size-4" /> {backfilling ? "Fetching…" : "Run batch (50)"}
+            </Button>
+            <Button
+              onClick={runBackfillAll}
+              disabled={backfilling}
+              variant={autoBackfilling ? "destructive" : "default"}
+            >
+              {autoBackfilling ? "Stop" : "Backfill all"}
+            </Button>
+          </div>
         </div>
       </div>
 
