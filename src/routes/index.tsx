@@ -166,15 +166,13 @@ function gradientFor(id: string): string {
 }
 
 function Index() {
-  const { q, sort, cuisine, nearMin } = Route.useSearch();
+  const { q, sort, cuisine } = Route.useSearch();
   const navigate = Route.useNavigate();
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
   const [loading, setLoading] = useState(true);
   const [addOpen, setAddOpen] = useState(false);
   const { user, signInWithGoogle } = useAuth();
   const [localQ, setLocalQ] = useState(q);
-  const [userLoc, setUserLoc] = useState<{ lat: number; lon: number } | null>(null);
-  const [locLoading, setLocLoading] = useState(false);
   const [winners, setWinners] = useState<Map<string, { pollSlug: string; pollTitle: string }>>(
     new Map(),
   );
@@ -186,7 +184,7 @@ function Index() {
   useEffect(() => {
     const t = setTimeout(() => {
       if (localQ !== q) {
-        navigate({ search: { q: localQ, sort, cuisine, nearMin }, replace: true });
+        navigate({ search: { q: localQ, sort, cuisine }, replace: true });
       }
     }, 250);
     return () => clearTimeout(t);
@@ -201,42 +199,6 @@ function Index() {
       );
     setRestaurants((data ?? []) as Restaurant[]);
     setLoading(false);
-  };
-
-  const requestLocation = (opts?: { thenSortNear?: boolean; thenNearMin?: "" | "5" | "10" | "40" }) => {
-    if (!("geolocation" in navigator)) {
-      toast.error("Geolocation isn't supported on this device.");
-      return;
-    }
-    setLocLoading(true);
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        setUserLoc({ lat: pos.coords.latitude, lon: pos.coords.longitude });
-        setLocLoading(false);
-        toast.success("Location set — showing nearest spots.");
-        if (opts?.thenSortNear) {
-          navigate({ search: { q, sort: "near", cuisine, nearMin }, replace: true });
-        } else if (opts?.thenNearMin !== undefined) {
-          navigate({ search: { q, sort, cuisine, nearMin: opts.thenNearMin }, replace: true });
-        }
-      },
-      (err) => {
-        setLocLoading(false);
-        toast.error(
-          err.code === err.PERMISSION_DENIED
-            ? "Location permission denied."
-            : "Couldn't get your location.",
-        );
-      },
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 },
-    );
-  };
-
-  const clearLocation = () => {
-    setUserLoc(null);
-    if (sort === "near" || nearMin) {
-      navigate({ search: { q, sort: sort === "near" ? "popular" : sort, cuisine, nearMin: "" }, replace: true });
-    }
   };
 
   useEffect(() => {
@@ -261,7 +223,6 @@ function Index() {
     })();
   }, []);
 
-  // Build category list with counts based on derived tags
   const categoryList = useMemo(() => {
     const counts = new Map<string, number>();
     restaurants.forEach((r) => {
@@ -281,41 +242,16 @@ function Index() {
       .slice(0, 8);
   }, [restaurants]);
 
-  // Decorate with distance when user location is available
-  const withDistance = useMemo(() => {
-    if (!userLoc) return restaurants.map((r) => ({ ...r, _distance: null as number | null }));
-    return restaurants.map((r) => ({
-      ...r,
-      _distance:
-        r.latitude != null && r.longitude != null
-          ? distanceKm(userLoc.lat, userLoc.lon, r.latitude, r.longitude)
-          : null,
-    }));
-  }, [restaurants, userLoc]);
-
   const filtered = useMemo(() => {
     const term = q.trim().toLowerCase();
-    const radiusKm = nearMin && userLoc ? Number(nearMin) * KM_PER_MIN : null;
-    let list = withDistance.filter((r) => {
+    let list = restaurants.filter((r) => {
       const matchesTerm =
         !term ||
         r.name.toLowerCase().includes(term) ||
         (r.cuisine ?? "").toLowerCase().includes(term);
       const matchesCuisine = !cuisine || categoriesFor(r).includes(cuisine);
-      const matchesRadius =
-        radiusKm == null || (r._distance != null && r._distance <= radiusKm);
-      return matchesTerm && matchesCuisine && matchesRadius;
+      return matchesTerm && matchesCuisine;
     });
-
-    if (sort === "near" || (radiusKm != null)) {
-      // Pin restaurants without coords to the bottom
-      list = [...list].sort((a, b) => {
-        const ad = a._distance ?? Infinity;
-        const bd = b._distance ?? Infinity;
-        return ad - bd;
-      });
-      return list;
-    }
 
     list = [...list].sort((a, b) => {
       switch (sort) {
@@ -338,26 +274,14 @@ function Index() {
       }
     });
     return list;
-  }, [withDistance, q, sort, cuisine, nearMin, userLoc]);
+  }, [restaurants, q, sort, cuisine]);
 
-  const setSort = (v: SortKey) => {
-    if (v === "near" && !userLoc) {
-      requestLocation({ thenSortNear: true });
-      return;
-    }
-    navigate({ search: { q, sort: v, cuisine, nearMin }, replace: true });
-  };
+  const setSort = (v: SortKey) =>
+    navigate({ search: { q, sort: v, cuisine }, replace: true });
   const setCuisine = (v: string) =>
-    navigate({ search: { q, sort, cuisine: v, nearMin }, replace: true });
-  const setNearMin = (v: "" | "5" | "10" | "40") => {
-    if (v && !userLoc) {
-      requestLocation({ thenNearMin: v });
-      return;
-    }
-    navigate({ search: { q, sort, cuisine, nearMin: v }, replace: true });
-  };
+    navigate({ search: { q, sort, cuisine: v }, replace: true });
   const clearFilters = () =>
-    navigate({ search: { q: "", sort: "popular", cuisine: "", nearMin: "" }, replace: true });
+    navigate({ search: { q: "", sort: "popular", cuisine: "" }, replace: true });
 
   const hasFilters = q || cuisine || sort !== "popular" || nearMin;
   const showFeatured = !hasFilters && featured.length >= 4;
