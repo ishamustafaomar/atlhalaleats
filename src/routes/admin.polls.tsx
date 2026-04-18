@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
@@ -38,7 +38,20 @@ function AdminPolls() {
   });
   const [saving, setSaving] = useState(false);
   const [backfilling, setBackfilling] = useState(false);
-  const [backfillStats, setBackfillStats] = useState<{ enriched: number; missed: number; remaining: number } | null>(null);
+  const [backfillStats, setBackfillStats] = useState<{
+    enriched: number;
+    missed: number;
+    remaining: number;
+  } | null>(null);
+  const stopRequestedRef = useRef(false);
+  const [autoBackfilling, setAutoBackfilling] = useState(false);
+  const [autoProgress, setAutoProgress] = useState<{
+    batches: number;
+    enriched: number;
+    missed: number;
+    remaining: number;
+    total: number;
+  } | null>(null);
   const backfillFn = useServerFn(backfillRestaurantDetails);
 
   const runBackfill = async () => {
@@ -51,6 +64,64 @@ function AdminPolls() {
       toast.error((e as Error).message);
     } finally {
       setBackfilling(false);
+    }
+  };
+
+  const runBackfillAll = async () => {
+    if (autoBackfilling) {
+      stopRequestedRef.current = true;
+      return;
+    }
+    stopRequestedRef.current = false;
+    setAutoBackfilling(true);
+    let batches = 0;
+    let totalEnriched = 0;
+    let totalMissed = 0;
+    let initialRemaining = 0;
+    let lastRemaining = Infinity;
+    let stagnantRuns = 0;
+    try {
+      while (true) {
+        const res = await backfillFn({ data: { onlyMissing: true, limit: 50 } });
+        batches += 1;
+        totalEnriched += res.enriched;
+        totalMissed += res.missed;
+        if (initialRemaining === 0) {
+          // First batch: estimate the total backlog (already-processed in batch 1 + remaining).
+          initialRemaining = res.enriched + res.missed + res.remaining;
+        }
+        setAutoProgress({
+          batches,
+          enriched: totalEnriched,
+          missed: totalMissed,
+          remaining: res.remaining,
+          total: initialRemaining,
+        });
+        setBackfillStats(res);
+
+        if (res.remaining === 0) break;
+        if (stopRequestedRef.current) break;
+
+        if (res.enriched + res.missed === 0 || res.remaining >= lastRemaining) {
+          stagnantRuns += 1;
+          if (stagnantRuns >= 2) {
+            toast.warning("Backfill stalled — some restaurants can't be matched on Google.");
+            break;
+          }
+        } else {
+          stagnantRuns = 0;
+        }
+        lastRemaining = res.remaining;
+        await new Promise((r) => setTimeout(r, 300));
+      }
+      toast.success(
+        `Done. ${batches} batch${batches === 1 ? "" : "es"}, +${totalEnriched} enriched.`,
+      );
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setAutoBackfilling(false);
+      stopRequestedRef.current = false;
     }
   };
 
@@ -143,16 +214,60 @@ function AdminPolls() {
 
       <div className="p-6 rounded-2xl border border-border bg-card mb-10">
         <div className="flex items-start justify-between gap-4 flex-wrap">
-          <div>
+          <div className="min-w-0 flex-1">
             <h2 className="font-display font-bold text-lg">Restaurant info backfill</h2>
             <p className="text-sm text-muted-foreground mt-1">
-              Auto-fetch hours, phone, website, price, plus code and service options from Google Places.
-              Runs 50 at a time. {backfillStats && `Last run: +${backfillStats.enriched} enriched, ${backfillStats.remaining} left.`}
+              Auto-fetch hours, phone, website, price, photos and service options from Google Places.
+              {backfillStats && !autoBackfilling
+                ? ` Last run: +${backfillStats.enriched} enriched, ${backfillStats.remaining} left.`
+                : ""}
             </p>
+
+            {autoBackfilling && autoProgress && (
+              <div className="mt-4">
+                <div className="flex items-center justify-between text-xs text-muted-foreground mb-1.5">
+                  <span>
+                    Batch {autoProgress.batches} · {autoProgress.enriched} enriched ·{" "}
+                    {autoProgress.missed} missed
+                  </span>
+                  <span>{autoProgress.remaining} remaining</span>
+                </div>
+                <div className="h-2 rounded-full bg-secondary overflow-hidden">
+                  <div
+                    className="h-full bg-primary transition-[width] duration-500"
+                    style={{
+                      width: `${
+                        autoProgress.total > 0
+                          ? Math.min(
+                              100,
+                              ((autoProgress.total - autoProgress.remaining) /
+                                autoProgress.total) *
+                                100,
+                            )
+                          : 0
+                      }%`,
+                    }}
+                  />
+                </div>
+              </div>
+            )}
           </div>
-          <Button onClick={runBackfill} disabled={backfilling} variant="outline">
-            <Sparkles className="size-4" /> {backfilling ? "Fetching…" : "Run backfill (50)"}
-          </Button>
+          <div className="flex items-center gap-2 shrink-0">
+            <Button
+              onClick={runBackfill}
+              disabled={backfilling || autoBackfilling}
+              variant="outline"
+            >
+              <Sparkles className="size-4" /> {backfilling ? "Fetching…" : "Run batch (50)"}
+            </Button>
+            <Button
+              onClick={runBackfillAll}
+              disabled={backfilling}
+              variant={autoBackfilling ? "destructive" : "default"}
+            >
+              {autoBackfilling ? "Stop" : "Backfill all"}
+            </Button>
+          </div>
         </div>
       </div>
 
