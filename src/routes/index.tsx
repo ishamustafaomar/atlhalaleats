@@ -8,7 +8,6 @@ import { Badge } from "@/components/ui/badge";
 import { StarRating } from "@/components/StarRating";
 import {
   Search,
-  MapPin,
   Plus,
   ArrowUpDown,
   X,
@@ -18,9 +17,7 @@ import {
   Trophy,
   ChevronRight,
   Navigation,
-  Loader2,
 } from "lucide-react";
-import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { AddRestaurantDialog } from "@/components/AddRestaurantDialog";
 import { PollBanner } from "@/components/PollBanner";
