@@ -182,7 +182,7 @@ function Index() {
   useEffect(() => {
     const t = setTimeout(() => {
       if (localQ !== q) {
-        navigate({ search: { q: localQ, sort, cuisine }, replace: true });
+        navigate({ search: { q: localQ, sort, cuisine }, replace: true, resetScroll: false });
       }
     }, 250);
     return () => clearTimeout(t);
@@ -275,11 +275,11 @@ function Index() {
   }, [restaurants, q, sort, cuisine]);
 
   const setSort = (v: SortKey) =>
-    navigate({ search: { q, sort: v, cuisine }, replace: true });
+    navigate({ search: { q, sort: v, cuisine }, replace: true, resetScroll: false });
   const setCuisine = (v: string) =>
-    navigate({ search: { q, sort, cuisine: v }, replace: true });
+    navigate({ search: { q, sort, cuisine: v }, replace: true, resetScroll: false });
   const clearFilters = () =>
-    navigate({ search: { q: "", sort: "popular", cuisine: "" }, replace: true });
+    navigate({ search: { q: "", sort: "popular", cuisine: "" }, replace: true, resetScroll: false });
 
   const hasFilters = q || cuisine || sort !== "popular";
   const showFeatured = !hasFilters && featured.length >= 4;
@@ -471,7 +471,7 @@ function Index() {
                 label={`"${q}"`}
                 onRemove={() => {
                   setLocalQ("");
-                  navigate({ search: { q: "", sort, cuisine }, replace: true });
+                  navigate({ search: { q: "", sort, cuisine }, replace: true, resetScroll: false });
                 }}
               />
             )}
