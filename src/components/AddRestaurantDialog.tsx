@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import {
@@ -14,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { Navigation, Loader2, Check, ImagePlus, X } from "lucide-react";
+import { enrichRestaurant } from "@/server/places.functions";
 
 export function AddRestaurantDialog({
   open,
