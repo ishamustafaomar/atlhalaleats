@@ -8,7 +8,7 @@ import logoUrl from "@/assets/atl-halal-eats-logo.png";
 
 export function SiteHeader() {
   const { user, signInWithGoogle, signOut, loading } = useAuth();
-  const { isAdmin } = useIsAdmin();
+  const isAdmin = !!user;
 
   return (
     <header className="sticky top-0 z-40 backdrop-blur-md bg-background/80 border-b border-border">
