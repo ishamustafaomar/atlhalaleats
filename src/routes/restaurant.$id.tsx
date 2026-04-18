@@ -294,6 +294,9 @@ function RestaurantPage() {
         </div>
       </div>
 
+      {/* Place info card (Google Places enrichment) */}
+      <RestaurantInfoCard restaurant={restaurant} onRefresh={load} />
+
       {/* Review form */}
       <section className="mt-10">
         <h2 className="font-display text-2xl font-bold mb-4">
