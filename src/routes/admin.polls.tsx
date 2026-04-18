@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { useIsAdmin } from "@/hooks/use-admin";
@@ -9,7 +10,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Trash2, Lock } from "lucide-react";
+import { Trash2, Lock, Sparkles } from "lucide-react";
+import { backfillRestaurantDetails } from "@/server/places.functions";
 
 export const Route = createFileRoute("/admin/polls")({
   component: AdminPolls,
@@ -35,6 +37,22 @@ function AdminPolls() {
     description: "",
   });
   const [saving, setSaving] = useState(false);
+  const [backfilling, setBackfilling] = useState(false);
+  const [backfillStats, setBackfillStats] = useState<{ enriched: number; missed: number; remaining: number } | null>(null);
+  const backfillFn = useServerFn(backfillRestaurantDetails);
+
+  const runBackfill = async () => {
+    setBackfilling(true);
+    try {
+      const res = await backfillFn({ data: { onlyMissing: true, limit: 50 } });
+      setBackfillStats(res);
+      toast.success(`Enriched ${res.enriched}, missed ${res.missed}. ${res.remaining} left.`);
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setBackfilling(false);
+    }
+  };
 
   const load = () =>
     supabase
@@ -122,6 +140,21 @@ function AdminPolls() {
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 py-10">
       <h1 className="font-display font-bold text-3xl mb-6">Manage polls</h1>
+
+      <div className="p-6 rounded-2xl border border-border bg-card mb-10">
+        <div className="flex items-start justify-between gap-4 flex-wrap">
+          <div>
+            <h2 className="font-display font-bold text-lg">Restaurant info backfill</h2>
+            <p className="text-sm text-muted-foreground mt-1">
+              Auto-fetch hours, phone, website, price, plus code and service options from Google Places.
+              Runs 50 at a time. {backfillStats && `Last run: +${backfillStats.enriched} enriched, ${backfillStats.remaining} left.`}
+            </p>
+          </div>
+          <Button onClick={runBackfill} disabled={backfilling} variant="outline">
+            <Sparkles className="size-4" /> {backfilling ? "Fetching…" : "Run backfill (50)"}
+          </Button>
+        </div>
+      </div>
 
       <div className="p-6 rounded-2xl border border-border bg-card mb-10">
         <h2 className="font-display font-bold text-lg mb-4">New poll</h2>

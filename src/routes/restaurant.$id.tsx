@@ -7,7 +7,22 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, MessageSquare, Trash2, MapPin } from "lucide-react";
+import {
+  ArrowLeft,
+  MessageSquare,
+  Trash2,
+  MapPin,
+  Phone,
+  Globe,
+  Clock,
+  Utensils,
+  ShoppingBag,
+  Bike,
+  CalendarCheck,
+  Sparkles,
+} from "lucide-react";
+import { useServerFn } from "@tanstack/react-start";
+import { enrichRestaurant } from "@/server/places.functions";
 import { RestaurantLogo } from "@/components/RestaurantLogo";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
@@ -28,6 +43,20 @@ type Restaurant = {
   address: string | null;
   latitude: number | null;
   longitude: number | null;
+  phone: string | null;
+  website: string | null;
+  menu_url: string | null;
+  price_level: number | null;
+  opening_hours: { weekday?: string[]; open_now?: boolean | null } | null;
+  service_options: {
+    dine_in?: boolean | null;
+    takeout?: boolean | null;
+    delivery?: boolean | null;
+    reservable?: boolean | null;
+  } | null;
+  plus_code: string | null;
+  place_id: string | null;
+  details_fetched_at: string | null;
 };
 
 type Review = {
@@ -265,6 +294,9 @@ function RestaurantPage() {
         </div>
       </div>
 
+      {/* Place info card (Google Places enrichment) */}
+      <RestaurantInfoCard restaurant={restaurant} onRefresh={load} />
+
       {/* Review form */}
       <section className="mt-10">
         <h2 className="font-display text-2xl font-bold mb-4">
@@ -466,5 +498,171 @@ function ReviewCard({
         )}
       </div>
     </article>
+  );
+}
+
+function priceDisplay(level: number | null): string {
+  if (level == null) return "";
+  return "$".repeat(Math.max(1, Math.min(4, level + (level === 0 ? 1 : 0))));
+}
+
+function RestaurantInfoCard({
+  restaurant,
+  onRefresh,
+}: {
+  restaurant: Restaurant;
+  onRefresh: () => void;
+}) {
+  const { user } = useAuth();
+  const enrichFn = useServerFn(enrichRestaurant);
+  const [enriching, setEnriching] = useState(false);
+
+  const hasAnyInfo =
+    restaurant.phone ||
+    restaurant.website ||
+    restaurant.opening_hours ||
+    restaurant.service_options ||
+    restaurant.plus_code ||
+    restaurant.price_level != null;
+
+  const enrich = async () => {
+    if (!user) return;
+    setEnriching(true);
+    try {
+      const res = await enrichFn({ data: { restaurantId: restaurant.id } });
+      if (res.ok) {
+        toast.success("Details refreshed from Google");
+        onRefresh();
+      } else {
+        toast.error("No Google match found for this restaurant");
+      }
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setEnriching(false);
+    }
+  };
+
+  const services: { label: string; on: boolean | null | undefined; Icon: typeof Utensils }[] = [
+    { label: "Dine-in", on: restaurant.service_options?.dine_in, Icon: Utensils },
+    { label: "Takeout", on: restaurant.service_options?.takeout, Icon: ShoppingBag },
+    { label: "Delivery", on: restaurant.service_options?.delivery, Icon: Bike },
+    { label: "Reservable", on: restaurant.service_options?.reservable, Icon: CalendarCheck },
+  ].filter((s) => s.on === true);
+
+  if (!hasAnyInfo) {
+    return (
+      <section className="mt-6 rounded-2xl border border-dashed border-border p-5 text-center">
+        <p className="text-sm text-muted-foreground">
+          Hours, phone, website and more are not yet available for this spot.
+        </p>
+        {user && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={enrich}
+            disabled={enriching}
+            className="mt-3"
+          >
+            <Sparkles className="size-4" /> {enriching ? "Fetching…" : "Fetch from Google"}
+          </Button>
+        )}
+      </section>
+    );
+  }
+
+  return (
+    <section className="mt-6 rounded-2xl border border-border bg-card p-5 sm:p-6">
+      <div className="flex items-start justify-between gap-3 flex-wrap mb-4">
+        <h2 className="font-display font-bold text-lg">Visit info</h2>
+        <div className="flex items-center gap-2">
+          {restaurant.opening_hours?.open_now != null && (
+            <Badge
+              className={
+                restaurant.opening_hours.open_now
+                  ? "bg-green-500/15 text-green-700 border-green-500/30"
+                  : "bg-muted text-muted-foreground border-border"
+              }
+            >
+              {restaurant.opening_hours.open_now ? "Open now" : "Closed"}
+            </Badge>
+          )}
+          {restaurant.price_level != null && (
+            <Badge variant="outline">{priceDisplay(restaurant.price_level)}</Badge>
+          )}
+        </div>
+      </div>
+
+      {services.length > 0 && (
+        <div className="flex flex-wrap gap-2 mb-5">
+          {services.map(({ label, Icon }) => (
+            <Badge
+              key={label}
+              variant="secondary"
+              className="rounded-full px-3 py-1 text-xs gap-1.5"
+            >
+              <Icon className="size-3.5" /> {label}
+            </Badge>
+          ))}
+        </div>
+      )}
+
+      <div className="grid sm:grid-cols-2 gap-x-8 gap-y-4">
+        {restaurant.phone && (
+          <a
+            href={`tel:${restaurant.phone.replace(/\s+/g, "")}`}
+            className="flex items-center gap-3 text-sm hover:text-primary"
+          >
+            <Phone className="size-4 text-muted-foreground" />
+            <span>{restaurant.phone}</span>
+          </a>
+        )}
+        {restaurant.website && (
+          <a
+            href={restaurant.website}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-3 text-sm hover:text-primary truncate"
+          >
+            <Globe className="size-4 text-muted-foreground shrink-0" />
+            <span className="truncate">
+              {restaurant.website.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, "")}
+            </span>
+          </a>
+        )}
+        {restaurant.plus_code && (
+          <div className="flex items-center gap-3 text-sm text-muted-foreground">
+            <MapPin className="size-4" />
+            <span className="font-mono">{restaurant.plus_code}</span>
+          </div>
+        )}
+      </div>
+
+      {restaurant.opening_hours?.weekday && restaurant.opening_hours.weekday.length > 0 && (
+        <div className="mt-5 pt-5 border-t border-border">
+          <div className="flex items-center gap-2 mb-3 text-sm font-medium">
+            <Clock className="size-4 text-muted-foreground" /> Hours
+          </div>
+          <ul className="text-sm grid sm:grid-cols-2 gap-y-1 gap-x-6 text-muted-foreground">
+            {restaurant.opening_hours.weekday.map((line) => (
+              <li key={line} className="flex justify-between">
+                <span>{line.split(":")[0]}</span>
+                <span className="text-foreground/80">
+                  {line.split(":").slice(1).join(":").trim()}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {user && (
+        <div className="mt-5 pt-5 border-t border-border flex justify-end">
+          <Button variant="ghost" size="sm" onClick={enrich} disabled={enriching}>
+            <Sparkles className="size-3.5" /> {enriching ? "Refreshing…" : "Refresh from Google"}
+          </Button>
+        </div>
+      )}
+    </section>
   );
 }

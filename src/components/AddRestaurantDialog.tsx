@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import {
@@ -14,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { Navigation, Loader2, Check, ImagePlus, X } from "lucide-react";
+import { enrichRestaurant } from "@/server/places.functions";
 
 export function AddRestaurantDialog({
   open,
@@ -25,6 +27,7 @@ export function AddRestaurantDialog({
   onAdded: () => void;
 }) {
   const { user } = useAuth();
+  const enrichFn = useServerFn(enrichRestaurant);
   const [name, setName] = useState("");
   const [cuisine, setCuisine] = useState("");
   const [note, setNote] = useState("");
@@ -110,22 +113,35 @@ export function AddRestaurantDialog({
       logo_url = pub.publicUrl;
     }
 
-    const { error } = await supabase.from("restaurants").insert({
-      name: name.trim(),
-      cuisine: cuisine.trim() || "Halal restaurant",
-      note: note.trim() || null,
-      address: address.trim() || null,
-      latitude: coords?.lat ?? null,
-      longitude: coords?.lon ?? null,
-      logo_url,
-      created_by: user.id,
-    });
+    const { data: inserted, error } = await supabase
+      .from("restaurants")
+      .insert({
+        name: name.trim(),
+        cuisine: cuisine.trim() || "Halal restaurant",
+        note: note.trim() || null,
+        address: address.trim() || null,
+        latitude: coords?.lat ?? null,
+        longitude: coords?.lon ?? null,
+        logo_url,
+        created_by: user.id,
+      })
+      .select("id")
+      .single();
     setSubmitting(false);
     if (error) {
       toast.error(error.message);
       return;
     }
     toast.success("Restaurant added");
+
+    // Fire-and-forget Google Places enrichment so the new spot has hours,
+    // phone, website etc. on its first detail-page view.
+    if (inserted?.id) {
+      enrichFn({ data: { restaurantId: inserted.id } }).catch(() => {
+        // silent — user will still see basic info, refresh button is available.
+      });
+    }
+
     reset();
     onOpenChange(false);
     onAdded();
