@@ -48,7 +48,16 @@ const searchSchema = z.object({
   q: fallback(z.string(), "").default(""),
   sort: fallback(z.enum(["top", "popular", "newest", "near", "name"]), "popular").default("popular"),
   cuisine: fallback(z.string(), "").default(""),
+  nearMin: fallback(z.enum(["", "5", "10", "40"]), "").default(""),
 });
+
+// Approx avg city driving speed in km per minute (~30 mph = 0.804 km/min)
+const KM_PER_MIN = 0.8;
+const NEAR_OPTIONS = [
+  { value: "5", label: "5 min" },
+  { value: "10", label: "10 min" },
+  { value: "40", label: "40 min" },
+] as const;
 
 export const Route = createFileRoute("/")({
   validateSearch: zodValidator(searchSchema),
@@ -166,7 +175,7 @@ function gradientFor(id: string): string {
 }
 
 function Index() {
-  const { q, sort, cuisine } = Route.useSearch();
+  const { q, sort, cuisine, nearMin } = Route.useSearch();
   const navigate = Route.useNavigate();
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
   const [loading, setLoading] = useState(true);
@@ -186,7 +195,7 @@ function Index() {
   useEffect(() => {
     const t = setTimeout(() => {
       if (localQ !== q) {
-        navigate({ search: { q: localQ, sort, cuisine }, replace: true });
+        navigate({ search: { q: localQ, sort, cuisine, nearMin }, replace: true });
       }
     }, 250);
     return () => clearTimeout(t);
@@ -203,7 +212,7 @@ function Index() {
     setLoading(false);
   };
 
-  const requestLocation = (thenSortNear = true) => {
+  const requestLocation = (opts?: { thenSortNear?: boolean; thenNearMin?: "" | "5" | "10" | "40" }) => {
     if (!("geolocation" in navigator)) {
       toast.error("Geolocation isn't supported on this device.");
       return;
@@ -214,8 +223,10 @@ function Index() {
         setUserLoc({ lat: pos.coords.latitude, lon: pos.coords.longitude });
         setLocLoading(false);
         toast.success("Location set — showing nearest spots.");
-        if (thenSortNear) {
-          navigate({ search: { q, sort: "near", cuisine }, replace: true });
+        if (opts?.thenSortNear) {
+          navigate({ search: { q, sort: "near", cuisine, nearMin }, replace: true });
+        } else if (opts?.thenNearMin !== undefined) {
+          navigate({ search: { q, sort, cuisine, nearMin: opts.thenNearMin }, replace: true });
         }
       },
       (err) => {
@@ -232,8 +243,8 @@ function Index() {
 
   const clearLocation = () => {
     setUserLoc(null);
-    if (sort === "near") {
-      navigate({ search: { q, sort: "popular", cuisine }, replace: true });
+    if (sort === "near" || nearMin) {
+      navigate({ search: { q, sort: sort === "near" ? "popular" : sort, cuisine, nearMin: "" }, replace: true });
     }
   };
 
@@ -293,16 +304,19 @@ function Index() {
 
   const filtered = useMemo(() => {
     const term = q.trim().toLowerCase();
+    const radiusKm = nearMin && userLoc ? Number(nearMin) * KM_PER_MIN : null;
     let list = withDistance.filter((r) => {
       const matchesTerm =
         !term ||
         r.name.toLowerCase().includes(term) ||
         (r.cuisine ?? "").toLowerCase().includes(term);
       const matchesCuisine = !cuisine || categoriesFor(r).includes(cuisine);
-      return matchesTerm && matchesCuisine;
+      const matchesRadius =
+        radiusKm == null || (r._distance != null && r._distance <= radiusKm);
+      return matchesTerm && matchesCuisine && matchesRadius;
     });
 
-    if (sort === "near") {
+    if (sort === "near" || (radiusKm != null)) {
       // Pin restaurants without coords to the bottom
       list = [...list].sort((a, b) => {
         const ad = a._distance ?? Infinity;
@@ -333,21 +347,28 @@ function Index() {
       }
     });
     return list;
-  }, [withDistance, q, sort, cuisine]);
+  }, [withDistance, q, sort, cuisine, nearMin, userLoc]);
 
   const setSort = (v: SortKey) => {
     if (v === "near" && !userLoc) {
-      requestLocation(true);
+      requestLocation({ thenSortNear: true });
       return;
     }
-    navigate({ search: { q, sort: v, cuisine }, replace: true });
+    navigate({ search: { q, sort: v, cuisine, nearMin }, replace: true });
   };
   const setCuisine = (v: string) =>
-    navigate({ search: { q, sort, cuisine: v }, replace: true });
+    navigate({ search: { q, sort, cuisine: v, nearMin }, replace: true });
+  const setNearMin = (v: "" | "5" | "10" | "40") => {
+    if (v && !userLoc) {
+      requestLocation({ thenNearMin: v });
+      return;
+    }
+    navigate({ search: { q, sort, cuisine, nearMin: v }, replace: true });
+  };
   const clearFilters = () =>
-    navigate({ search: { q: "", sort: "popular", cuisine: "" }, replace: true });
+    navigate({ search: { q: "", sort: "popular", cuisine: "", nearMin: "" }, replace: true });
 
-  const hasFilters = q || cuisine || sort !== "popular";
+  const hasFilters = q || cuisine || sort !== "popular" || nearMin;
   const showFeatured = !hasFilters && featured.length >= 4;
 
   return (
@@ -503,26 +524,49 @@ function Index() {
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            <Button
-              variant={userLoc ? "default" : "outline"}
-              onClick={() => (userLoc ? clearLocation() : requestLocation(true))}
-              disabled={locLoading}
-              className={`h-11 rounded-xl ${
-                userLoc
-                  ? "bg-primary text-primary-foreground hover:bg-primary/90"
-                  : "bg-card border-border hover:border-primary/40"
-              }`}
-            >
-              {locLoading ? (
-                <Loader2 className="size-4 animate-spin" />
-              ) : (
-                <Navigation className={`size-4 ${userLoc ? "" : "text-primary"}`} />
-              )}
-              <span className="hidden sm:inline">
-                {userLoc ? "Using your location" : "Near me"}
-              </span>
-              {userLoc && <X className="size-3.5 opacity-80 ml-1" />}
-            </Button>
+            <div className="inline-flex items-center rounded-xl border border-border bg-card overflow-hidden h-11">
+              <button
+                type="button"
+                onClick={() => (userLoc ? clearLocation() : requestLocation({ thenSortNear: true }))}
+                disabled={locLoading}
+                className={`h-full px-3 inline-flex items-center gap-1.5 text-sm font-medium transition-colors ${
+                  userLoc
+                    ? "bg-primary text-primary-foreground"
+                    : "hover:bg-muted text-foreground"
+                }`}
+                aria-label={userLoc ? "Clear location" : "Use my location"}
+              >
+                {locLoading ? (
+                  <Loader2 className="size-4 animate-spin" />
+                ) : (
+                  <Navigation className={`size-4 ${userLoc ? "" : "text-primary"}`} />
+                )}
+                <span className="hidden sm:inline">
+                  {userLoc ? "Near me" : "Near me"}
+                </span>
+                {userLoc && <X className="size-3.5 opacity-80 ml-0.5" />}
+              </button>
+              <div className="h-6 w-px bg-border" />
+              {NEAR_OPTIONS.map((o) => {
+                const active = nearMin === o.value;
+                return (
+                  <button
+                    key={o.value}
+                    type="button"
+                    onClick={() => setNearMin(active ? "" : o.value)}
+                    disabled={locLoading}
+                    className={`h-full px-3 text-xs font-semibold tabular-nums transition-colors ${
+                      active
+                        ? "bg-foreground text-background"
+                        : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                    }`}
+                    aria-pressed={active}
+                  >
+                    {o.label}
+                  </button>
+                );
+              })}
+            </div>
 
             <Select value={sort} onValueChange={(v) => setSort(v as SortKey)}>
               <SelectTrigger className="h-11 w-[200px] bg-card border-border rounded-xl">
@@ -562,7 +606,7 @@ function Index() {
                 label={`"${q}"`}
                 onRemove={() => {
                   setLocalQ("");
-                  navigate({ search: { q: "", sort, cuisine }, replace: true });
+                  navigate({ search: { q: "", sort, cuisine, nearMin }, replace: true });
                 }}
               />
             )}
@@ -570,6 +614,12 @@ function Index() {
               <FilterChip
                 label={CATEGORIES.find((c) => c.key === cuisine)?.label ?? cuisine}
                 onRemove={() => setCuisine("")}
+              />
+            )}
+            {nearMin && (
+              <FilterChip
+                label={`Within ${nearMin} min`}
+                onRemove={() => setNearMin("")}
               />
             )}
             <button
