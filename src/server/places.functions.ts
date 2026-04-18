@@ -299,7 +299,7 @@ export const backfillRestaurantDetails = createServerFn({ method: "POST" })
       const { count: remaining } = await supabaseAdmin
         .from("restaurants")
         .select("id", { count: "exact", head: true })
-        .is("details_fetched_at", null);
+        .or("details_fetched_at.is.null,photo_urls.is.null,photo_urls.eq.{}");
 
       return {
         processed: (rows ?? []).length,
