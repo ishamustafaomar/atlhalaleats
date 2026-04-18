@@ -70,6 +70,65 @@ const PRICE_LEVEL_MAP: Record<string, number> = {
   PRICE_LEVEL_VERY_EXPENSIVE: 4,
 };
 
+/**
+ * Last-resort: ask Firecrawl to scrape Google Images for the restaurant and
+ * return up to N image URLs. Unreliable on purpose — used only when Google
+ * Places returned zero photos for a restaurant.
+ */
+async function firecrawlImageSearch(query: string, max = 6): Promise<string[]> {
+  const apiKey = process.env.FIRECRAWL_API_KEY;
+  if (!apiKey) return [];
+  const target = `https://www.google.com/search?tbm=isch&q=${encodeURIComponent(query)}`;
+  try {
+    const res = await fetch("https://api.firecrawl.dev/v2/scrape", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        url: target,
+        formats: ["html"],
+        onlyMainContent: false,
+        waitFor: 1500,
+      }),
+    });
+    if (!res.ok) {
+      console.error(`[firecrawlImageSearch] failed [${res.status}]`);
+      return [];
+    }
+    const json = (await res.json()) as { data?: { html?: string }; html?: string };
+    const html = json.data?.html ?? json.html ?? "";
+    if (!html) return [];
+
+    // Extract image URLs from <img src> and any http(s)://...jpg|jpeg|png|webp in the HTML.
+    const found = new Set<string>();
+    const imgSrcRe = /<img[^>]+src=["']([^"']+)["']/gi;
+    let m: RegExpExecArray | null;
+    while ((m = imgSrcRe.exec(html)) && found.size < max * 4) {
+      const u = m[1];
+      if (u.startsWith("http") && !u.includes("gstatic.com/images") && !u.includes("/logos/")) {
+        found.add(u);
+      }
+    }
+    const urlRe = /https?:\/\/[^\s"'<>]+\.(?:jpg|jpeg|png|webp)/gi;
+    while ((m = urlRe.exec(html)) && found.size < max * 4) {
+      found.add(m[0]);
+    }
+
+    // Filter out tiny google-owned thumbnails / icons.
+    const filtered = Array.from(found).filter((u) => {
+      if (u.includes("google.com/images/branding")) return false;
+      if (u.includes("favicon")) return false;
+      return true;
+    });
+    return filtered.slice(0, max);
+  } catch (e) {
+    console.error("[firecrawlImageSearch] error:", (e as Error).message);
+    return [];
+  }
+}
+
 async function searchPlace(query: string, biasLat?: number | null, biasLng?: number | null) {
   const apiKey = process.env.GOOGLE_PLACES_API_KEY;
   if (!apiKey) throw new Error("GOOGLE_PLACES_API_KEY is not configured");
@@ -204,10 +263,15 @@ export const enrichRestaurant = createServerFn({ method: "POST" })
       if (!place) return { ok: false as const, reason: "No Places match" };
 
       const update = mapPlaceToColumns(place);
-      const photo_urls = await resolvePhotoUrls(
+      let photo_urls = await resolvePhotoUrls(
         place.photos,
         process.env.GOOGLE_PLACES_API_KEY,
       );
+      if (photo_urls.length === 0) {
+        photo_urls = await firecrawlImageSearch(
+          `${r.name} ${r.address ?? "Atlanta GA"} restaurant`,
+        );
+      }
       const { error: upErr } = await supabaseAdmin
         .from("restaurants")
         .update({ ...update, ...(photo_urls.length ? { photo_urls } : {}) })
@@ -280,10 +344,15 @@ export const backfillRestaurantDetails = createServerFn({ method: "POST" })
             continue;
           }
           const update = mapPlaceToColumns(place);
-          const photo_urls = await resolvePhotoUrls(
+          let photo_urls = await resolvePhotoUrls(
             place.photos,
             process.env.GOOGLE_PLACES_API_KEY!,
           );
+          if (photo_urls.length === 0) {
+            photo_urls = await firecrawlImageSearch(
+              `${r.name} ${r.address ?? "Atlanta GA"} restaurant`,
+            );
+          }
           const { error: upErr } = await supabaseAdmin
             .from("restaurants")
             .update({ ...update, ...(photo_urls.length ? { photo_urls } : {}) })
