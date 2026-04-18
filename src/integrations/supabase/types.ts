@@ -190,6 +190,7 @@ export type Database = {
           google_rating: number | null
           id: string
           latitude: number | null
+          logo_url: string | null
           longitude: number | null
           name: string
           note: string | null
@@ -204,6 +205,7 @@ export type Database = {
           google_rating?: number | null
           id?: string
           latitude?: number | null
+          logo_url?: string | null
           longitude?: number | null
           name: string
           note?: string | null
@@ -218,6 +220,7 @@ export type Database = {
           google_rating?: number | null
           id?: string
           latitude?: number | null
+          logo_url?: string | null
           longitude?: number | null
           name?: string
           note?: string | null
