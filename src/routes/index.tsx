@@ -275,11 +275,11 @@ function Index() {
   }, [restaurants, q, sort, cuisine]);
 
   const setSort = (v: SortKey) =>
-    navigate({ search: { q, sort: v, cuisine }, replace: true });
+    navigate({ search: { q, sort: v, cuisine }, replace: true, resetScroll: false });
   const setCuisine = (v: string) =>
-    navigate({ search: { q, sort, cuisine: v }, replace: true });
+    navigate({ search: { q, sort, cuisine: v }, replace: true, resetScroll: false });
   const clearFilters = () =>
-    navigate({ search: { q: "", sort: "popular", cuisine: "" }, replace: true });
+    navigate({ search: { q: "", sort: "popular", cuisine: "" }, replace: true, resetScroll: false });
 
   const hasFilters = q || cuisine || sort !== "popular";
   const showFeatured = !hasFilters && featured.length >= 4;
