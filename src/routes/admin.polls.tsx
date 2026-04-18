@@ -28,7 +28,8 @@ type Poll = {
 
 function AdminPolls() {
   const { user, signInWithGoogle } = useAuth();
-  const { isAdmin, loading: roleLoading } = useIsAdmin();
+  const isAdmin = !!user;
+  const roleLoading = false;
   const [polls, setPolls] = useState<Poll[]>([]);
   const [form, setForm] = useState({
     title: "",
