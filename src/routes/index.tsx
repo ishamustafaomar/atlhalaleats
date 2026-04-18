@@ -175,7 +175,7 @@ function gradientFor(id: string): string {
 }
 
 function Index() {
-  const { q, sort, cuisine } = Route.useSearch();
+  const { q, sort, cuisine, nearMin } = Route.useSearch();
   const navigate = Route.useNavigate();
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
   const [loading, setLoading] = useState(true);
@@ -195,7 +195,7 @@ function Index() {
   useEffect(() => {
     const t = setTimeout(() => {
       if (localQ !== q) {
-        navigate({ search: { q: localQ, sort, cuisine }, replace: true });
+        navigate({ search: { q: localQ, sort, cuisine, nearMin }, replace: true });
       }
     }, 250);
     return () => clearTimeout(t);
