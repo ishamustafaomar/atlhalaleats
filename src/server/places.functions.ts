@@ -25,7 +25,11 @@ const FIELD_MASK = [
   "places.servesDinner",
   "places.menuForChildren",
   "places.plusCode",
+  "places.photos",
 ].join(",");
+
+const MAX_PHOTOS = 6;
+const PHOTO_MAX_WIDTH = 1200;
 
 type PlaceResult = {
   id?: string;
@@ -55,6 +59,7 @@ type PlaceResult = {
   servesLunch?: boolean;
   servesDinner?: boolean;
   plusCode?: { compoundCode?: string; globalCode?: string };
+  photos?: { name?: string; widthPx?: number; heightPx?: number }[];
 };
 
 const PRICE_LEVEL_MAP: Record<string, number> = {
@@ -95,6 +100,35 @@ async function searchPlace(query: string, biasLat?: number | null, biasLng?: num
   }
   const json = (await res.json()) as { places?: PlaceResult[] };
   return json.places?.[0] ?? null;
+}
+
+/**
+ * Resolve a Google Places photo "name" (e.g. "places/XYZ/photos/ABC") to a stable
+ * googleusercontent.com URL by following the redirect from the media endpoint.
+ * We store the final URL so the client never needs the API key.
+ */
+async function resolvePhotoUrls(
+  photos: PlaceResult["photos"],
+  apiKey: string,
+): Promise<string[]> {
+  if (!photos?.length) return [];
+  const picks = photos.slice(0, MAX_PHOTOS);
+  const out: string[] = [];
+  for (const p of picks) {
+    if (!p.name) continue;
+    const mediaUrl = `https://places.googleapis.com/v1/${p.name}/media?maxWidthPx=${PHOTO_MAX_WIDTH}&skipHttpRedirect=true`;
+    try {
+      const res = await fetch(mediaUrl, {
+        headers: { "X-Goog-Api-Key": apiKey },
+      });
+      if (!res.ok) continue;
+      const json = (await res.json()) as { photoUri?: string };
+      if (json.photoUri) out.push(json.photoUri);
+    } catch {
+      // skip this photo
+    }
+  }
+  return out;
 }
 
 function mapPlaceToColumns(p: PlaceResult) {
@@ -170,16 +204,20 @@ export const enrichRestaurant = createServerFn({ method: "POST" })
       if (!place) return { ok: false as const, reason: "No Places match" };
 
       const update = mapPlaceToColumns(place);
+      const photo_urls = await resolvePhotoUrls(
+        place.photos,
+        process.env.GOOGLE_PLACES_API_KEY,
+      );
       const { error: upErr } = await supabaseAdmin
         .from("restaurants")
-        .update(update)
+        .update({ ...update, ...(photo_urls.length ? { photo_urls } : {}) })
         .eq("id", data.restaurantId);
       if (upErr) {
         console.error("[enrichRestaurant] DB update failed:", upErr.message);
         return { ok: false as const, reason: `DB update error: ${upErr.message}` };
       }
 
-      return { ok: true as const, place_id: update.place_id };
+      return { ok: true as const, place_id: update.place_id, photos: photo_urls.length };
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       console.error("[enrichRestaurant] unhandled:", msg);
@@ -207,10 +245,13 @@ export const backfillRestaurantDetails = createServerFn({ method: "POST" })
       }
       let q = supabaseAdmin
         .from("restaurants")
-        .select("id,name,address,latitude,longitude,details_fetched_at")
+        .select("id,name,address,latitude,longitude,details_fetched_at,photo_urls")
         .order("created_at", { ascending: true })
         .limit(data.limit);
-      if (data.onlyMissing) q = q.is("details_fetched_at", null);
+      // "missing" = never fetched OR no photos yet (so we backfill photos onto previously-enriched rows)
+      if (data.onlyMissing) {
+        q = q.or("details_fetched_at.is.null,photo_urls.is.null,photo_urls.eq.{}");
+      }
       const { data: rows, error } = await q;
       if (error) {
         return {
@@ -239,9 +280,13 @@ export const backfillRestaurantDetails = createServerFn({ method: "POST" })
             continue;
           }
           const update = mapPlaceToColumns(place);
+          const photo_urls = await resolvePhotoUrls(
+            place.photos,
+            process.env.GOOGLE_PLACES_API_KEY!,
+          );
           const { error: upErr } = await supabaseAdmin
             .from("restaurants")
-            .update(update)
+            .update({ ...update, ...(photo_urls.length ? { photo_urls } : {}) })
             .eq("id", r.id);
           if (upErr) throw upErr;
           enriched++;
@@ -254,7 +299,7 @@ export const backfillRestaurantDetails = createServerFn({ method: "POST" })
       const { count: remaining } = await supabaseAdmin
         .from("restaurants")
         .select("id", { count: "exact", head: true })
-        .is("details_fetched_at", null);
+        .or("details_fetched_at.is.null,photo_urls.is.null,photo_urls.eq.{}");
 
       return {
         processed: (rows ?? []).length,

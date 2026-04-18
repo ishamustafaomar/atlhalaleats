@@ -24,6 +24,7 @@ import {
 import { useServerFn } from "@tanstack/react-start";
 import { enrichRestaurant } from "@/server/places.functions";
 import { RestaurantLogo } from "@/components/RestaurantLogo";
+import { RestaurantPhotoGallery } from "@/components/RestaurantPhotoGallery";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 
@@ -57,6 +58,7 @@ type Restaurant = {
   plus_code: string | null;
   place_id: string | null;
   details_fetched_at: string | null;
+  photo_urls: string[] | null;
 };
 
 type Review = {
@@ -293,6 +295,9 @@ function RestaurantPage() {
           })()}
         </div>
       </div>
+
+      {/* Photo gallery */}
+      <RestaurantPhotoGallery name={restaurant.name} photos={restaurant.photo_urls ?? []} />
 
       {/* Place info card (Google Places enrichment) */}
       <RestaurantInfoCard restaurant={restaurant} onRefresh={load} />

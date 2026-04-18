@@ -77,6 +77,7 @@ type Restaurant = {
   longitude: number | null;
   address: string | null;
   logo_url: string | null;
+  photo_urls: string[] | null;
 };
 
 // Haversine distance in kilometers
@@ -206,7 +207,7 @@ function Index() {
     const { data } = await supabase
       .from("restaurants")
       .select(
-        "id,name,cuisine,google_rating,note,avg_rating,review_count,created_at,latitude,longitude,address,logo_url",
+        "id,name,cuisine,google_rating,note,avg_rating,review_count,created_at,latitude,longitude,address,logo_url,photo_urls",
       );
     setRestaurants((data ?? []) as Restaurant[]);
     setLoading(false);
@@ -719,12 +720,13 @@ function FeaturedCard({ restaurant: r, rank }: { restaurant: Restaurant; rank: n
         <RestaurantLogo
           name={r.name}
           logoUrl={r.logo_url}
+          photoUrls={r.photo_urls}
           cuisine={r.cuisine}
           emoji={emojiFor(r)}
           emojiSize="text-5xl"
           className="size-full"
         />
-        {r.logo_url && (
+        {(r.logo_url || (r.photo_urls && r.photo_urls.length > 0)) && (
           <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/55 to-transparent pointer-events-none" />
         )}
         <div className="absolute top-3 left-3 z-10 flex items-center gap-1 bg-foreground/90 text-background text-xs font-bold px-2.5 py-1 rounded-full backdrop-blur">
@@ -785,12 +787,13 @@ function RestaurantCard({
         <RestaurantLogo
           name={r.name}
           logoUrl={r.logo_url}
+          photoUrls={r.photo_urls}
           cuisine={r.cuisine}
           emoji={emojiFor(r)}
           emojiSize="text-5xl"
           className="size-full"
         />
-        {r.logo_url && (
+        {(r.logo_url || (r.photo_urls && r.photo_urls.length > 0)) && (
           <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/55 to-transparent pointer-events-none" />
         )}
         {distLabel && (

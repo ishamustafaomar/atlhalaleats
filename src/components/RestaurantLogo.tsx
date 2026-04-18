@@ -3,6 +3,8 @@ import { useMemo, useState } from "react";
 type Props = {
   name: string;
   logoUrl?: string | null;
+  /** Real Google Places photos for this restaurant — when present, used before any fallback. */
+  photoUrls?: string[] | null;
   cuisine?: string | null;
   emoji?: string;
   className?: string;
@@ -19,12 +21,14 @@ type Props = {
 export function RestaurantLogo({
   name,
   logoUrl,
+  photoUrls,
   cuisine,
   emoji = "🍽️",
   className = "",
   emojiSize = "text-5xl",
 }: Props) {
   const [errored, setErrored] = useState(false);
+  const googlePhoto = photoUrls && photoUrls.length > 0 ? photoUrls[0] : null;
 
   const fallbackUrl = useMemo(() => {
     // Curated, hand-picked Unsplash photos per cuisine. Unsplash Source API is
@@ -126,7 +130,12 @@ export function RestaurantLogo({
     return `https://images.unsplash.com/${id}?auto=format&fit=crop&w=800&q=70`;
   }, [name, cuisine]);
 
-  const imageUrl = logoUrl && !errored ? logoUrl : fallbackUrl;
+  const imageUrl = googlePhoto && !errored
+    ? googlePhoto
+    : logoUrl && !errored
+      ? logoUrl
+      : fallbackUrl;
+  const isRealPhoto = !!(googlePhoto || logoUrl);
 
   return (
     <div
@@ -141,7 +150,7 @@ export function RestaurantLogo({
       />
       {/* Gentle dark scrim so any text overlaid on top remains legible */}
       <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent pointer-events-none" />
-      {!logoUrl && (
+      {!isRealPhoto && (
         <span
           className={`absolute bottom-2 right-2 ${emojiSize} drop-shadow-lg pointer-events-none`}
         >
