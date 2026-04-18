@@ -38,7 +38,6 @@ const SORT_OPTIONS = [
   { value: "top", label: "Highest rated", icon: Trophy },
   { value: "popular", label: "Most reviewed", icon: TrendingUp },
   { value: "newest", label: "Newest", icon: Clock },
-  { value: "near", label: "Nearest to me", icon: Navigation },
   { value: "name", label: "A → Z", icon: ArrowUpDown },
 ] as const;
 
@@ -46,18 +45,9 @@ type SortKey = (typeof SORT_OPTIONS)[number]["value"];
 
 const searchSchema = z.object({
   q: fallback(z.string(), "").default(""),
-  sort: fallback(z.enum(["top", "popular", "newest", "near", "name"]), "popular").default("popular"),
+  sort: fallback(z.enum(["top", "popular", "newest", "name"]), "popular").default("popular"),
   cuisine: fallback(z.string(), "").default(""),
-  nearMin: fallback(z.enum(["", "5", "10", "40"]), "").default(""),
 });
-
-// Approx avg city driving speed in km per minute (~30 mph = 0.804 km/min)
-const KM_PER_MIN = 0.8;
-const NEAR_OPTIONS = [
-  { value: "5", label: "5 min" },
-  { value: "10", label: "10 min" },
-  { value: "40", label: "40 min" },
-] as const;
 
 export const Route = createFileRoute("/")({
   validateSearch: zodValidator(searchSchema),
