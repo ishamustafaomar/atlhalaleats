@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, MessageSquare, Trash2 } from "lucide-react";
+import { ArrowLeft, MessageSquare, Trash2, MapPin } from "lucide-react";
 import { RestaurantLogo } from "@/components/RestaurantLogo";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
@@ -25,6 +25,9 @@ type Restaurant = {
   avg_rating: number | null;
   review_count: number | null;
   logo_url: string | null;
+  address: string | null;
+  latitude: number | null;
+  longitude: number | null;
 };
 
 type Review = {
@@ -221,7 +224,14 @@ function RestaurantPage() {
           </div>
         )}
 
-        <div className="mt-6 flex items-center gap-4 pt-6 border-t border-border">
+        {restaurant.address && (
+          <p className="mt-4 text-sm text-muted-foreground flex items-start gap-2">
+            <MapPin className="size-4 mt-0.5 shrink-0" />
+            <span>{restaurant.address}</span>
+          </p>
+        )}
+
+        <div className="mt-6 flex flex-wrap items-center gap-4 pt-6 border-t border-border">
           <StarRating value={Number(restaurant.avg_rating ?? 0)} size="lg" />
           <div>
             <div className="font-display font-bold text-2xl text-foreground">
@@ -232,6 +242,26 @@ function RestaurantPage() {
               {restaurant.review_count === 1 ? "review" : "reviews"}
             </div>
           </div>
+          {(() => {
+            const query =
+              restaurant.latitude != null && restaurant.longitude != null
+                ? `${restaurant.latitude},${restaurant.longitude}`
+                : restaurant.address
+                  ? `${restaurant.name} ${restaurant.address}`
+                  : restaurant.name;
+            const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
+            return (
+              <Button
+                asChild
+                variant="outline"
+                className="ml-auto rounded-full border-border bg-background hover:bg-accent/10"
+              >
+                <a href={mapsUrl} target="_blank" rel="noopener noreferrer">
+                  <MapPin className="size-4" /> View on Google Maps
+                </a>
+              </Button>
+            );
+          })()}
         </div>
       </div>
 
