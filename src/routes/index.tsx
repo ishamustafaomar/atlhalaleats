@@ -18,9 +18,7 @@ import {
   Trophy,
   ChevronRight,
   Navigation,
-  Loader2,
 } from "lucide-react";
-import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { AddRestaurantDialog } from "@/components/AddRestaurantDialog";
 import { PollBanner } from "@/components/PollBanner";
