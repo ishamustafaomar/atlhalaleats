@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as PollsIndexRouteImport } from './routes/polls.index'
 import { Route as RestaurantIdRouteImport } from './routes/restaurant.$id'
 import { Route as PollsSlugRouteImport } from './routes/polls.$slug'
+import { Route as ApiFirecrawlBackfillRouteImport } from './routes/api.firecrawl-backfill'
 import { Route as AdminPollsRouteImport } from './routes/admin.polls'
 
 const IndexRoute = IndexRouteImport.update({
@@ -35,6 +36,11 @@ const PollsSlugRoute = PollsSlugRouteImport.update({
   path: '/polls/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiFirecrawlBackfillRoute = ApiFirecrawlBackfillRouteImport.update({
+  id: '/api/firecrawl-backfill',
+  path: '/api/firecrawl-backfill',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminPollsRoute = AdminPollsRouteImport.update({
   id: '/admin/polls',
   path: '/admin/polls',
@@ -44,6 +50,7 @@ const AdminPollsRoute = AdminPollsRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin/polls': typeof AdminPollsRoute
+  '/api/firecrawl-backfill': typeof ApiFirecrawlBackfillRoute
   '/polls/$slug': typeof PollsSlugRoute
   '/restaurant/$id': typeof RestaurantIdRoute
   '/polls/': typeof PollsIndexRoute
@@ -51,6 +58,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin/polls': typeof AdminPollsRoute
+  '/api/firecrawl-backfill': typeof ApiFirecrawlBackfillRoute
   '/polls/$slug': typeof PollsSlugRoute
   '/restaurant/$id': typeof RestaurantIdRoute
   '/polls': typeof PollsIndexRoute
@@ -59,6 +67,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/admin/polls': typeof AdminPollsRoute
+  '/api/firecrawl-backfill': typeof ApiFirecrawlBackfillRoute
   '/polls/$slug': typeof PollsSlugRoute
   '/restaurant/$id': typeof RestaurantIdRoute
   '/polls/': typeof PollsIndexRoute
@@ -68,15 +77,23 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/admin/polls'
+    | '/api/firecrawl-backfill'
     | '/polls/$slug'
     | '/restaurant/$id'
     | '/polls/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/admin/polls' | '/polls/$slug' | '/restaurant/$id' | '/polls'
+  to:
+    | '/'
+    | '/admin/polls'
+    | '/api/firecrawl-backfill'
+    | '/polls/$slug'
+    | '/restaurant/$id'
+    | '/polls'
   id:
     | '__root__'
     | '/'
     | '/admin/polls'
+    | '/api/firecrawl-backfill'
     | '/polls/$slug'
     | '/restaurant/$id'
     | '/polls/'
@@ -85,6 +102,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminPollsRoute: typeof AdminPollsRoute
+  ApiFirecrawlBackfillRoute: typeof ApiFirecrawlBackfillRoute
   PollsSlugRoute: typeof PollsSlugRoute
   RestaurantIdRoute: typeof RestaurantIdRoute
   PollsIndexRoute: typeof PollsIndexRoute
@@ -120,6 +138,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PollsSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/firecrawl-backfill': {
+      id: '/api/firecrawl-backfill'
+      path: '/api/firecrawl-backfill'
+      fullPath: '/api/firecrawl-backfill'
+      preLoaderRoute: typeof ApiFirecrawlBackfillRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/polls': {
       id: '/admin/polls'
       path: '/admin/polls'
@@ -133,6 +158,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminPollsRoute: AdminPollsRoute,
+  ApiFirecrawlBackfillRoute: ApiFirecrawlBackfillRoute,
   PollsSlugRoute: PollsSlugRoute,
   RestaurantIdRoute: RestaurantIdRoute,
   PollsIndexRoute: PollsIndexRoute,
@@ -140,3 +166,12 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}
