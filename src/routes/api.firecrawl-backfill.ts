@@ -50,11 +50,15 @@ const BAD_URL_FRAGMENTS = [
   "gstatic.com",
   "google.com/logos",
   "google.com/images/branding",
+  "ssl.gstatic",
+  "googleusercontent.com/a/", // user avatars
+  "favicon",
 ];
 
-function hasOnlyBadUrls(urls: string[] | null): boolean {
+/** A row needs re-processing if ANY of its URLs looks like Google chrome/junk. */
+function hasAnyBadUrl(urls: string[] | null): boolean {
   if (!urls || urls.length === 0) return false;
-  return urls.every((u) => BAD_URL_FRAGMENTS.some((b) => u.includes(b)));
+  return urls.some((u) => BAD_URL_FRAGMENTS.some((b) => u.includes(b)));
 }
 
 export const Route = createFileRoute("/api/firecrawl-backfill")({
@@ -78,7 +82,7 @@ export const Route = createFileRoute("/api/firecrawl-backfill")({
         }
 
         const candidates = (allRows ?? [])
-          .filter((r) => !r.photo_urls || r.photo_urls.length === 0 || hasOnlyBadUrls(r.photo_urls))
+          .filter((r) => !r.photo_urls || r.photo_urls.length === 0 || hasAnyBadUrl(r.photo_urls))
           .slice(0, limit);
 
         const results: { id: string; name: string; photos: number }[] = [];
@@ -96,7 +100,7 @@ export const Route = createFileRoute("/api/firecrawl-backfill")({
         }
 
         const remaining = (allRows ?? []).filter(
-          (r) => !r.photo_urls || r.photo_urls.length === 0 || hasOnlyBadUrls(r.photo_urls),
+          (r) => !r.photo_urls || r.photo_urls.length === 0 || hasAnyBadUrl(r.photo_urls),
         ).length - results.filter((r) => r.photos > 0).length;
 
         return new Response(
