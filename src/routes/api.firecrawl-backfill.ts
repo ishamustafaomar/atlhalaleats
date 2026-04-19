@@ -82,7 +82,7 @@ export const Route = createFileRoute("/api/firecrawl-backfill")({
         }
 
         const candidates = (allRows ?? [])
-          .filter((r) => !r.photo_urls || r.photo_urls.length === 0 || hasOnlyBadUrls(r.photo_urls))
+          .filter((r) => !r.photo_urls || r.photo_urls.length === 0 || hasAnyBadUrl(r.photo_urls))
           .slice(0, limit);
 
         const results: { id: string; name: string; photos: number }[] = [];
@@ -100,7 +100,7 @@ export const Route = createFileRoute("/api/firecrawl-backfill")({
         }
 
         const remaining = (allRows ?? []).filter(
-          (r) => !r.photo_urls || r.photo_urls.length === 0 || hasOnlyBadUrls(r.photo_urls),
+          (r) => !r.photo_urls || r.photo_urls.length === 0 || hasAnyBadUrl(r.photo_urls),
         ).length - results.filter((r) => r.photos > 0).length;
 
         return new Response(
