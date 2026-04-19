@@ -50,11 +50,15 @@ const BAD_URL_FRAGMENTS = [
   "gstatic.com",
   "google.com/logos",
   "google.com/images/branding",
+  "ssl.gstatic",
+  "googleusercontent.com/a/", // user avatars
+  "favicon",
 ];
 
-function hasOnlyBadUrls(urls: string[] | null): boolean {
+/** A row needs re-processing if ANY of its URLs looks like Google chrome/junk. */
+function hasAnyBadUrl(urls: string[] | null): boolean {
   if (!urls || urls.length === 0) return false;
-  return urls.every((u) => BAD_URL_FRAGMENTS.some((b) => u.includes(b)));
+  return urls.some((u) => BAD_URL_FRAGMENTS.some((b) => u.includes(b)));
 }
 
 export const Route = createFileRoute("/api/firecrawl-backfill")({
