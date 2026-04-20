@@ -697,11 +697,15 @@ function RestaurantCard({
           <div className="flex items-center gap-2">
             <StarRating value={Number(r.avg_rating ?? 0)} size="sm" />
             {r.review_count && r.review_count > 0 ? (
-              <span className="text-xs text-muted-foreground tabular-nums">
-                {Number(r.avg_rating).toFixed(1)} · {r.review_count}
+              <span className="inline-flex items-center gap-1 text-xs text-muted-foreground tabular-nums">
+                <span className="font-semibold text-foreground">
+                  {Number(r.avg_rating).toFixed(1)}
+                </span>
+                <MessageSquare className="size-3" />
+                {r.review_count}
               </span>
             ) : (
-              <span className="text-xs text-muted-foreground">No reviews</span>
+              <span className="text-xs text-muted-foreground">No reviews yet</span>
             )}
           </div>
           <span className="text-xs font-semibold text-primary opacity-0 group-hover:opacity-100 group-hover:translate-x-0 -translate-x-1 transition-all">
