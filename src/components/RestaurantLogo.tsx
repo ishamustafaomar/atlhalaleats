@@ -29,7 +29,6 @@ export function RestaurantLogo({
   // Real photos are intentionally skipped — the scraped sources were unreliable.
   void logoUrl;
   void photoUrls;
-  void useState;
 
   // Deterministic gradient per restaurant so each card looks distinct.
   const gradient = useMemo(() => {
