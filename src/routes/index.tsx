@@ -680,6 +680,13 @@ function RestaurantCard({
         </h3>
         <p className="text-sm text-muted-foreground mt-0.5">{r.cuisine}</p>
 
+        {r.address && (
+          <p className="mt-2 inline-flex items-center gap-1.5 text-xs text-muted-foreground line-clamp-1">
+            <MapPin className="size-3.5 shrink-0 text-primary/70" />
+            <span className="line-clamp-1">{r.address}</span>
+          </p>
+        )}
+
         {r.note && (
           <p className="text-xs text-brick mt-3 italic font-medium line-clamp-2">
             ⚠ {r.note.replace(/\\\*/g, "*")}
