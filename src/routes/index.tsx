@@ -18,6 +18,8 @@ import {
   Trophy,
   ChevronRight,
   Navigation,
+  MessageSquare,
+  Star,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AddRestaurantDialog } from "@/components/AddRestaurantDialog";
@@ -660,8 +662,8 @@ function RestaurantCard({
           </div>
         )}
         {r.google_rating && (
-          <div className="absolute top-3 right-3 z-10 bg-background/95 text-foreground text-xs font-bold px-2.5 py-1 rounded-full backdrop-blur shadow-sm">
-            ★ {r.google_rating}
+          <div className="absolute top-3 right-3 z-10 inline-flex items-center gap-1 bg-background/95 text-foreground text-xs font-bold px-2.5 py-1 rounded-full backdrop-blur shadow-sm">
+            <Star className="size-3 fill-accent text-accent" /> {r.google_rating}
           </div>
         )}
       </div>
@@ -678,6 +680,13 @@ function RestaurantCard({
         </h3>
         <p className="text-sm text-muted-foreground mt-0.5">{r.cuisine}</p>
 
+        {r.address && (
+          <p className="mt-2 inline-flex items-center gap-1.5 text-xs text-muted-foreground line-clamp-1">
+            <MapPin className="size-3.5 shrink-0 text-primary/70" />
+            <span className="line-clamp-1">{r.address}</span>
+          </p>
+        )}
+
         {r.note && (
           <p className="text-xs text-brick mt-3 italic font-medium line-clamp-2">
             ⚠ {r.note.replace(/\\\*/g, "*")}
@@ -688,11 +697,15 @@ function RestaurantCard({
           <div className="flex items-center gap-2">
             <StarRating value={Number(r.avg_rating ?? 0)} size="sm" />
             {r.review_count && r.review_count > 0 ? (
-              <span className="text-xs text-muted-foreground tabular-nums">
-                {Number(r.avg_rating).toFixed(1)} · {r.review_count}
+              <span className="inline-flex items-center gap-1 text-xs text-muted-foreground tabular-nums">
+                <span className="font-semibold text-foreground">
+                  {Number(r.avg_rating).toFixed(1)}
+                </span>
+                <MessageSquare className="size-3" />
+                {r.review_count}
               </span>
             ) : (
-              <span className="text-xs text-muted-foreground">No reviews</span>
+              <span className="text-xs text-muted-foreground">No reviews yet</span>
             )}
           </div>
           <span className="text-xs font-semibold text-primary opacity-0 group-hover:opacity-100 group-hover:translate-x-0 -translate-x-1 transition-all">
