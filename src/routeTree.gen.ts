@@ -9,13 +9,20 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as PollsIndexRouteImport } from './routes/polls.index'
 import { Route as RestaurantIdRouteImport } from './routes/restaurant.$id'
 import { Route as PollsSlugRouteImport } from './routes/polls.$slug'
+import { Route as ApiFirecrawlDetailsRouteImport } from './routes/api.firecrawl-details'
 import { Route as ApiFirecrawlBackfillRouteImport } from './routes/api.firecrawl-backfill'
 import { Route as AdminPollsRouteImport } from './routes/admin.polls'
 
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -36,6 +43,11 @@ const PollsSlugRoute = PollsSlugRouteImport.update({
   path: '/polls/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiFirecrawlDetailsRoute = ApiFirecrawlDetailsRouteImport.update({
+  id: '/api/firecrawl-details',
+  path: '/api/firecrawl-details',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiFirecrawlBackfillRoute = ApiFirecrawlBackfillRouteImport.update({
   id: '/api/firecrawl-backfill',
   path: '/api/firecrawl-backfill',
@@ -49,16 +61,20 @@ const AdminPollsRoute = AdminPollsRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/privacy': typeof PrivacyRoute
   '/admin/polls': typeof AdminPollsRoute
   '/api/firecrawl-backfill': typeof ApiFirecrawlBackfillRoute
+  '/api/firecrawl-details': typeof ApiFirecrawlDetailsRoute
   '/polls/$slug': typeof PollsSlugRoute
   '/restaurant/$id': typeof RestaurantIdRoute
   '/polls/': typeof PollsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/privacy': typeof PrivacyRoute
   '/admin/polls': typeof AdminPollsRoute
   '/api/firecrawl-backfill': typeof ApiFirecrawlBackfillRoute
+  '/api/firecrawl-details': typeof ApiFirecrawlDetailsRoute
   '/polls/$slug': typeof PollsSlugRoute
   '/restaurant/$id': typeof RestaurantIdRoute
   '/polls': typeof PollsIndexRoute
@@ -66,8 +82,10 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/privacy': typeof PrivacyRoute
   '/admin/polls': typeof AdminPollsRoute
   '/api/firecrawl-backfill': typeof ApiFirecrawlBackfillRoute
+  '/api/firecrawl-details': typeof ApiFirecrawlDetailsRoute
   '/polls/$slug': typeof PollsSlugRoute
   '/restaurant/$id': typeof RestaurantIdRoute
   '/polls/': typeof PollsIndexRoute
@@ -76,24 +94,30 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/privacy'
     | '/admin/polls'
     | '/api/firecrawl-backfill'
+    | '/api/firecrawl-details'
     | '/polls/$slug'
     | '/restaurant/$id'
     | '/polls/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/privacy'
     | '/admin/polls'
     | '/api/firecrawl-backfill'
+    | '/api/firecrawl-details'
     | '/polls/$slug'
     | '/restaurant/$id'
     | '/polls'
   id:
     | '__root__'
     | '/'
+    | '/privacy'
     | '/admin/polls'
     | '/api/firecrawl-backfill'
+    | '/api/firecrawl-details'
     | '/polls/$slug'
     | '/restaurant/$id'
     | '/polls/'
@@ -101,8 +125,10 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  PrivacyRoute: typeof PrivacyRoute
   AdminPollsRoute: typeof AdminPollsRoute
   ApiFirecrawlBackfillRoute: typeof ApiFirecrawlBackfillRoute
+  ApiFirecrawlDetailsRoute: typeof ApiFirecrawlDetailsRoute
   PollsSlugRoute: typeof PollsSlugRoute
   RestaurantIdRoute: typeof RestaurantIdRoute
   PollsIndexRoute: typeof PollsIndexRoute
@@ -110,6 +136,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -138,6 +171,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PollsSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/firecrawl-details': {
+      id: '/api/firecrawl-details'
+      path: '/api/firecrawl-details'
+      fullPath: '/api/firecrawl-details'
+      preLoaderRoute: typeof ApiFirecrawlDetailsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/firecrawl-backfill': {
       id: '/api/firecrawl-backfill'
       path: '/api/firecrawl-backfill'
@@ -157,8 +197,10 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  PrivacyRoute: PrivacyRoute,
   AdminPollsRoute: AdminPollsRoute,
   ApiFirecrawlBackfillRoute: ApiFirecrawlBackfillRoute,
+  ApiFirecrawlDetailsRoute: ApiFirecrawlDetailsRoute,
   PollsSlugRoute: PollsSlugRoute,
   RestaurantIdRoute: RestaurantIdRoute,
   PollsIndexRoute: PollsIndexRoute,

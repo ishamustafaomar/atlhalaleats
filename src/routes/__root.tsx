@@ -81,9 +81,7 @@ function RootComponent() {
         <main className="flex-1">
           <Outlet />
         </main>
-        <footer className="border-t border-border py-8 text-center text-xs text-muted-foreground">
-          Built with care for the Atlanta halal community 🌙
-        </footer>
+        <SiteFooter />
       </div>
       <Toaster />
     </AuthProvider>

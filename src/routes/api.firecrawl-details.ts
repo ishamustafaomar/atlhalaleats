@@ -122,7 +122,12 @@ export const Route = createFileRoute("/api/firecrawl-details")({
           const ext = extractFromText(md);
 
           // Only fill blanks; don't overwrite existing user-trusted data.
-          const update: Record<string, unknown> = {};
+          const update: {
+            phone?: string;
+            website?: string;
+            address?: string;
+            opening_hours?: { weekday: string[]; open_now: boolean | null };
+          } = {};
           const flags: { phone?: boolean; website?: boolean; address?: boolean; hours?: boolean } = {};
           if (!r.phone && ext.phone) {
             update.phone = ext.phone;
