@@ -662,8 +662,8 @@ function RestaurantCard({
           </div>
         )}
         {r.google_rating && (
-          <div className="absolute top-3 right-3 z-10 bg-background/95 text-foreground text-xs font-bold px-2.5 py-1 rounded-full backdrop-blur shadow-sm">
-            ★ {r.google_rating}
+          <div className="absolute top-3 right-3 z-10 inline-flex items-center gap-1 bg-background/95 text-foreground text-xs font-bold px-2.5 py-1 rounded-full backdrop-blur shadow-sm">
+            <Star className="size-3 fill-accent text-accent" /> {r.google_rating}
           </div>
         )}
       </div>
