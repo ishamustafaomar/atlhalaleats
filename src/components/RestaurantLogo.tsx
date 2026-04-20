@@ -25,9 +25,11 @@ export function RestaurantLogo({
   className = "",
   emojiSize = "text-6xl",
 }: Props) {
-  const [errored, setErrored] = useState(false);
-  const realPhoto =
-    photoUrls && photoUrls.length > 0 ? photoUrls[0] : logoUrl ? logoUrl : null;
+  // Always render the cuisine-themed gradient + emoji placeholder.
+  // Real photos are intentionally skipped — the scraped sources were unreliable.
+  void logoUrl;
+  void photoUrls;
+  void useState;
 
   // Deterministic gradient per restaurant so each card looks distinct.
   const gradient = useMemo(() => {
@@ -45,21 +47,6 @@ export function RestaurantLogo({
     for (let i = 0; i < name.length; i++) hash = (hash * 31 + name.charCodeAt(i)) >>> 0;
     return palettes[hash % palettes.length];
   }, [name]);
-
-  if (realPhoto && !errored) {
-    return (
-      <div className={`relative overflow-hidden ${className}`}>
-        <img
-          src={realPhoto}
-          alt={`${name} photo`}
-          loading="lazy"
-          onError={() => setErrored(true)}
-          className="size-full object-cover transition-transform duration-500 group-hover:scale-105"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent pointer-events-none" />
-      </div>
-    );
-  }
 
   return (
     <div
