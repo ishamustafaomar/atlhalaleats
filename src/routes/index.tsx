@@ -18,6 +18,8 @@ import {
   Trophy,
   ChevronRight,
   Navigation,
+  MessageSquare,
+  Star,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AddRestaurantDialog } from "@/components/AddRestaurantDialog";
