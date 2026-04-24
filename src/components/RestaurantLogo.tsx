@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 
 type Props = {
   name: string;
@@ -13,9 +13,9 @@ type Props = {
 };
 
 /**
- * Renders the real restaurant photo when available (Google Places or uploaded
- * logo). Otherwise shows a clean, cuisine-themed gradient with the emoji icon
- * — no generic stock photos.
+ * Renders a real restaurant photo when available (Google Places photo or
+ * uploaded logo). Falls back to a deterministic cuisine-themed gradient with
+ * an emoji when no photo exists or the image fails to load.
  */
 export function RestaurantLogo({
   name,
@@ -25,12 +25,16 @@ export function RestaurantLogo({
   className = "",
   emojiSize = "text-6xl",
 }: Props) {
-  // Always render the cuisine-themed gradient + emoji placeholder.
-  // Real photos are intentionally skipped — the scraped sources were unreliable.
-  void logoUrl;
-  void photoUrls;
+  // Pick the first usable image: uploaded logo wins, then first Google photo.
+  const imageSrc = useMemo(() => {
+    if (logoUrl) return logoUrl;
+    if (photoUrls && photoUrls.length > 0) return photoUrls[0];
+    return null;
+  }, [logoUrl, photoUrls]);
 
-  // Deterministic gradient per restaurant so each card looks distinct.
+  const [failed, setFailed] = useState(false);
+
+  // Deterministic gradient per restaurant so each fallback card looks distinct.
   const gradient = useMemo(() => {
     const palettes = [
       "from-amber-200 via-orange-300 to-rose-300",
@@ -46,6 +50,20 @@ export function RestaurantLogo({
     for (let i = 0; i < name.length; i++) hash = (hash * 31 + name.charCodeAt(i)) >>> 0;
     return palettes[hash % palettes.length];
   }, [name]);
+
+  if (imageSrc && !failed) {
+    return (
+      <div className={`relative overflow-hidden ${className}`}>
+        <img
+          src={imageSrc}
+          alt={`${name} photo`}
+          loading="lazy"
+          onError={() => setFailed(true)}
+          className="size-full object-cover"
+        />
+      </div>
+    );
+  }
 
   return (
     <div
