@@ -12,6 +12,23 @@ type Props = {
   emojiSize?: string;
 };
 
+const BAD_IMAGE_FRAGMENTS = [
+  "fonts.gstatic.com/s/i/productlogos/googleg",
+  "google.com/logos",
+  "google.com/images/branding",
+  "ssl.gstatic.com/gb/images",
+  "googlelogo",
+  "/favicon",
+  "favicon.ico",
+  ".svg",
+];
+
+function isUsableRestaurantImage(url?: string | null) {
+  if (!url || !url.startsWith("http")) return false;
+  const lower = url.toLowerCase();
+  return !BAD_IMAGE_FRAGMENTS.some((fragment) => lower.includes(fragment));
+}
+
 /**
  * Renders a real restaurant photo when available (Google Places photo or
  * uploaded logo). Falls back to a deterministic cuisine-themed gradient with
@@ -25,14 +42,17 @@ export function RestaurantLogo({
   className = "",
   emojiSize = "text-6xl",
 }: Props) {
-  // Pick the first usable image: uploaded logo wins, then first Google photo.
-  const imageSrc = useMemo(() => {
-    if (logoUrl) return logoUrl;
-    if (photoUrls && photoUrls.length > 0) return photoUrls[0];
-    return null;
+  const [failedUrls, setFailedUrls] = useState<string[]>([]);
+
+  const candidateUrls = useMemo(() => {
+    const urls = [logoUrl, ...(photoUrls ?? [])].filter(isUsableRestaurantImage) as string[];
+    return Array.from(new Set(urls));
   }, [logoUrl, photoUrls]);
 
-  const [failed, setFailed] = useState(false);
+  const imageSrc = useMemo(
+    () => candidateUrls.find((url) => !failedUrls.includes(url)) ?? null,
+    [candidateUrls, failedUrls],
+  );
 
   // Deterministic gradient per restaurant so each fallback card looks distinct.
   const gradient = useMemo(() => {
@@ -51,14 +71,14 @@ export function RestaurantLogo({
     return palettes[hash % palettes.length];
   }, [name]);
 
-  if (imageSrc && !failed) {
+  if (imageSrc) {
     return (
       <div className={`relative overflow-hidden ${className}`}>
         <img
           src={imageSrc}
           alt={`${name} photo`}
           loading="lazy"
-          onError={() => setFailed(true)}
+          onError={() => setFailedUrls((prev) => (prev.includes(imageSrc) ? prev : [...prev, imageSrc]))}
           className="size-full object-cover"
         />
       </div>
