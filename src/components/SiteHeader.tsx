@@ -29,6 +29,14 @@ export function SiteHeader() {
 
         <div className="flex items-center gap-3">
           <Link
+            to="/"
+            className="hidden sm:inline-flex items-center gap-1.5 text-sm font-semibold text-foreground hover:text-primary transition-colors"
+            activeProps={{ className: "text-primary" }}
+            activeOptions={{ exact: true }}
+          >
+            Home
+          </Link>
+          <Link
             to="/polls"
             className="hidden sm:inline-flex items-center gap-1.5 text-sm font-semibold text-foreground hover:text-primary transition-colors"
             activeProps={{ className: "text-primary" }}
