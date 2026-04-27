@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { zodValidator, fallback } from "@tanstack/zod-adapter";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
@@ -173,6 +173,8 @@ function Index() {
   const [addOpen, setAddOpen] = useState(false);
   const { user, signInWithGoogle } = useAuth();
   const [localQ, setLocalQ] = useState(q);
+  const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [showAll, setShowAll] = useState(false);
   const [winners, setWinners] = useState<Map<string, { pollSlug: string; pollTitle: string }>>(
     new Map(),
   );
@@ -223,6 +225,20 @@ function Index() {
     })();
   }, []);
 
+  useEffect(() => {
+    if (!("geolocation" in navigator)) return;
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setUserLocation({
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+        });
+      },
+      () => setUserLocation(null),
+      { enableHighAccuracy: true, timeout: 7000, maximumAge: 300000 },
+    );
+  }, []);
+
   const categoryList = useMemo(() => {
     const counts = new Map<string, number>();
     restaurants.forEach((r) => {
@@ -235,12 +251,35 @@ function Index() {
       .sort((a, b) => b.count - a.count);
   }, [restaurants]);
 
-  const featured = useMemo(() => {
+  const topRated = useMemo(() => {
     return [...restaurants]
       .filter((r) => (r.review_count ?? 0) >= 1 && Number(r.avg_rating ?? 0) >= 4)
+      .sort((a, b) => {
+        const ratingDiff = Number(b.avg_rating ?? 0) - Number(a.avg_rating ?? 0);
+        if (ratingDiff !== 0) return ratingDiff;
+        return (b.review_count ?? 0) - (a.review_count ?? 0);
+      })
+      .slice(0, 8);
+  }, [restaurants]);
+
+  const hiddenGems = useMemo(() => {
+    return [...restaurants]
+      .filter((r) => Number(r.avg_rating ?? 0) >= 4.5 && (r.review_count ?? 0) <= 5)
       .sort((a, b) => Number(b.avg_rating ?? 0) - Number(a.avg_rating ?? 0))
       .slice(0, 8);
   }, [restaurants]);
+
+  const nearMe = useMemo(() => {
+    if (!userLocation) return [];
+    return [...restaurants]
+      .filter((r) => r.latitude != null && r.longitude != null)
+      .map((r) => ({
+        restaurant: r,
+        distance: distanceKm(userLocation.latitude, userLocation.longitude, r.latitude!, r.longitude!),
+      }))
+      .sort((a, b) => a.distance - b.distance)
+      .slice(0, 8);
+  }, [restaurants, userLocation]);
 
   const filtered = useMemo(() => {
     const term = q.trim().toLowerCase();
@@ -284,7 +323,8 @@ function Index() {
     navigate({ search: { q: "", sort: "popular", cuisine: "" }, replace: true, resetScroll: false });
 
   const hasFilters = q || cuisine || sort !== "popular";
-  const showFeatured = !hasFilters && featured.length >= 4;
+  const showGuides = !hasFilters && !loading;
+  const visibleRestaurants = !hasFilters && !showAll ? filtered.slice(0, 12) : filtered;
 
   return (
     <div>
@@ -312,16 +352,16 @@ function Index() {
             <MapPin className="size-3 mr-1.5" /> Greater Atlanta
             <span className="mx-2 opacity-60">·</span>
             <Sparkles className="size-3 mr-1" />
-            {restaurants.length} verified spots
+            {restaurants.length} community spots
           </Badge>
 
           <h1 className="font-display font-bold text-5xl sm:text-7xl lg:text-8xl text-primary-foreground max-w-4xl leading-[0.95] tracking-tight drop-shadow-[0_2px_20px_rgba(0,0,0,0.4)]">
-            Atlanta's <em className="not-italic text-accent italic">halal</em> table,
+            Find the best <em className="not-italic text-accent italic">halal food</em>
             <br />
-            <span className="text-primary-foreground/90">curated by you.</span>
+            <span className="text-primary-foreground/90">in Atlanta without guessing.</span>
           </h1>
           <p className="mt-6 text-lg sm:text-xl text-primary-foreground/95 max-w-xl leading-relaxed drop-shadow-[0_1px_8px_rgba(0,0,0,0.3)]">
-            Honest reviews, ratings, and conversation around the city's best halal kitchens.
+            Local picks shaped by people who actually eat there — quick signals for taste, value, portions, and family-friendly meals.
           </p>
           {!user && (
             <p className="mt-3 text-sm text-primary-foreground/85 max-w-xl drop-shadow-[0_1px_8px_rgba(0,0,0,0.3)]">
@@ -380,29 +420,60 @@ function Index() {
 
       {/* WEEKLY POLL BANNER */}
       <PollBanner />
-      {showFeatured && !loading && (
-        <section className="max-w-6xl mx-auto px-4 sm:px-6 pt-10">
-          <div className="flex items-end justify-between mb-5">
-            <div>
-              <div className="flex items-center gap-2 text-accent text-sm font-semibold uppercase tracking-wider">
-                <Trophy className="size-4" /> Top rated
-              </div>
-              <h2 className="font-display font-bold text-2xl sm:text-3xl text-foreground mt-1">
-                Community favorites
-              </h2>
-            </div>
-            <button
-              onClick={() => setSort("top")}
-              className="text-sm font-medium text-primary hover:underline inline-flex items-center gap-1"
+      {showGuides && (
+        <section className="max-w-6xl mx-auto px-4 sm:px-6 pt-10 space-y-10">
+          {topRated.length > 0 && (
+            <DiscoveryRail
+              eyebrow="Top rated spots"
+              title="Start with places locals already trust"
+              icon={<Trophy className="size-4" />}
+              action={() => setSort("top")}
             >
-              See all <ChevronRight className="size-4" />
-            </button>
-          </div>
-          <div className="flex gap-4 overflow-x-auto scrollbar-hide -mx-4 sm:-mx-6 px-4 sm:px-6 pb-2 snap-x snap-mandatory">
-            {featured.map((r, idx) => (
-              <FeaturedCard key={r.id} restaurant={r} rank={idx + 1} />
-            ))}
-          </div>
+              {topRated.map((r, idx) => (
+                <FeaturedCard key={r.id} restaurant={r} rank={idx + 1} />
+              ))}
+            </DiscoveryRail>
+          )}
+
+          {nearMe.length > 0 ? (
+            <DiscoveryRail
+              eyebrow="Near me"
+              title="Good options close to you"
+              icon={<Navigation className="size-4" />}
+            >
+              {nearMe.map(({ restaurant, distance }) => (
+                <FeaturedCard key={restaurant.id} restaurant={restaurant} distanceKm={distance} />
+              ))}
+            </DiscoveryRail>
+          ) : (
+            <section className="rounded-3xl border border-border bg-card/70 p-5 sm:p-6 shadow-[var(--shadow-soft)]">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div>
+                  <div className="flex items-center gap-2 text-primary text-sm font-semibold uppercase tracking-wider">
+                    <MapPin className="size-4" /> Map based discovery
+                  </div>
+                  <h2 className="font-display font-bold text-2xl sm:text-3xl text-foreground mt-1">
+                    Turn on location to see nearby halal picks
+                  </h2>
+                </div>
+                <Button variant="outline" className="rounded-xl" onClick={() => window.location.reload()}>
+                  <Navigation className="size-4" /> Enable nearby
+                </Button>
+              </div>
+            </section>
+          )}
+
+          {hiddenGems.length > 0 && (
+            <DiscoveryRail
+              eyebrow="Hidden gems"
+              title="High ratings without the hype"
+              icon={<Sparkles className="size-4" />}
+            >
+              {hiddenGems.map((r) => (
+                <FeaturedCard key={r.id} restaurant={r} />
+              ))}
+            </DiscoveryRail>
+          )}
         </section>
       )}
 
@@ -426,10 +497,11 @@ function Index() {
                   );
                 })()
               ) : (
-                "All restaurants"
+                "More community picks"
               )}
             </h2>
             <p className="text-sm text-muted-foreground mt-1.5">
+              <span className="font-medium text-foreground">{visibleRestaurants.length}</span> of{" "}
               <span className="font-medium text-foreground">{filtered.length}</span>{" "}
               {filtered.length === 1 ? "place" : "places"}
               {sort !== "popular" && (
@@ -519,7 +591,7 @@ function Index() {
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {filtered.map((r, idx) => (
+            {visibleRestaurants.map((r, idx) => (
               <RestaurantCard
                 key={r.id}
                 restaurant={r}
@@ -528,6 +600,13 @@ function Index() {
                 winner={winners.get(r.id) ?? null}
               />
             ))}
+          </div>
+        )}
+        {!loading && !hasFilters && !showAll && filtered.length > visibleRestaurants.length && (
+          <div className="mt-8 flex justify-center">
+            <Button variant="outline" className="rounded-xl" onClick={() => setShowAll(true)}>
+              Show all {filtered.length} spots
+            </Button>
           </div>
         )}
       </section>
@@ -572,7 +651,54 @@ function CuisinePill({
   );
 }
 
-function FeaturedCard({ restaurant: r, rank }: { restaurant: Restaurant; rank: number }) {
+function DiscoveryRail({
+  eyebrow,
+  title,
+  icon,
+  action,
+  children,
+}: {
+  eyebrow: string;
+  title: string;
+  icon: ReactNode;
+  action?: () => void;
+  children: ReactNode;
+}) {
+  return (
+    <section>
+      <div className="flex items-end justify-between mb-5">
+        <div>
+          <div className="flex items-center gap-2 text-accent text-sm font-semibold uppercase tracking-wider">
+            {icon} {eyebrow}
+          </div>
+          <h2 className="font-display font-bold text-2xl sm:text-3xl text-foreground mt-1">{title}</h2>
+        </div>
+        {action && (
+          <button
+            onClick={action}
+            className="text-sm font-medium text-primary hover:underline inline-flex items-center gap-1"
+          >
+            See all <ChevronRight className="size-4" />
+          </button>
+        )}
+      </div>
+      <div className="flex gap-4 overflow-x-auto scrollbar-hide -mx-4 sm:-mx-6 px-4 sm:px-6 pb-2 snap-x snap-mandatory">
+        {children}
+      </div>
+    </section>
+  );
+}
+
+function FeaturedCard({
+  restaurant: r,
+  rank,
+  distanceKm: dist,
+}: {
+  restaurant: Restaurant;
+  rank?: number;
+  distanceKm?: number | null;
+}) {
+  const distLabel = formatDistance(dist);
   return (
     <Link
       to="/restaurant/$id"
@@ -594,9 +720,16 @@ function FeaturedCard({ restaurant: r, rank }: { restaurant: Restaurant; rank: n
         {(r.logo_url || (r.photo_urls && r.photo_urls.length > 0)) && (
           <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/55 to-transparent pointer-events-none" />
         )}
-        <div className="absolute top-3 left-3 z-10 flex items-center gap-1 bg-foreground/90 text-background text-xs font-bold px-2.5 py-1 rounded-full backdrop-blur">
-          <Trophy className="size-3 text-accent" /> #{rank}
-        </div>
+        {rank && (
+          <div className="absolute top-3 left-3 z-10 flex items-center gap-1 bg-foreground/90 text-background text-xs font-bold px-2.5 py-1 rounded-full backdrop-blur">
+            <Trophy className="size-3 text-accent" /> #{rank}
+          </div>
+        )}
+        {distLabel && (
+          <div className="absolute top-3 left-3 z-10 flex items-center gap-1 bg-primary text-primary-foreground text-xs font-bold px-2.5 py-1 rounded-full shadow-md">
+            <Navigation className="size-3" /> {distLabel}
+          </div>
+        )}
         <div className="absolute top-3 right-3 z-10 bg-background/90 text-foreground text-xs font-bold px-2.5 py-1 rounded-full backdrop-blur">
           ★ {Number(r.avg_rating ?? 0).toFixed(1)}
         </div>
@@ -617,6 +750,22 @@ function FeaturedCard({ restaurant: r, rank }: { restaurant: Restaurant; rank: n
   );
 }
 
+function formatDistance(dist?: number | null) {
+  if (dist == null) return null;
+  return dist < 1 ? `${Math.round(dist * 1000)} m` : `${dist.toFixed(dist < 10 ? 1 : 0)} km`;
+}
+
+function getHighlights(r: Restaurant): string[] {
+  const rating = Number(r.avg_rating ?? r.google_rating ?? 0);
+  const cuisine = (r.cuisine ?? "").split(/[,/]/)[0]?.trim();
+  const highlights = [
+    rating >= 4.6 ? "Loved for taste" : rating >= 4.1 ? "Solid local pick" : "Worth a look",
+    (r.review_count ?? 0) <= 5 ? "Hidden gem" : "Community tested",
+    cuisine || "Halal eats",
+  ];
+  return highlights.slice(0, 3);
+}
+
 function RestaurantCard({
   restaurant: r,
   rank,
@@ -628,12 +777,8 @@ function RestaurantCard({
   distanceKm?: number | null;
   winner?: { pollSlug: string; pollTitle: string } | null;
 }) {
-  const distLabel =
-    dist == null
-      ? null
-      : dist < 1
-        ? `${Math.round(dist * 1000)} m`
-        : `${dist.toFixed(dist < 10 ? 1 : 0)} km`;
+  const distLabel = formatDistance(dist);
+  const highlights = getHighlights(r);
   return (
     <Link
       to="/restaurant/$id"
@@ -685,8 +830,19 @@ function RestaurantCard({
         </h3>
         <p className="text-sm text-muted-foreground mt-0.5">{r.cuisine}</p>
 
+        <div className="mt-3 flex flex-wrap gap-1.5">
+          {highlights.map((highlight) => (
+            <span
+              key={highlight}
+              className="rounded-full border border-border bg-secondary px-2.5 py-1 text-[11px] font-semibold text-secondary-foreground"
+            >
+              {highlight}
+            </span>
+          ))}
+        </div>
+
         {r.address && (
-          <p className="mt-2 inline-flex items-center gap-1.5 text-xs text-muted-foreground line-clamp-1">
+          <p className="mt-3 inline-flex items-center gap-1.5 text-xs text-muted-foreground line-clamp-1">
             <MapPin className="size-3.5 shrink-0 text-primary/70" />
             <span className="line-clamp-1">{r.address}</span>
           </p>
