@@ -660,9 +660,9 @@ function DiscoveryRail({
 }: {
   eyebrow: string;
   title: string;
-  icon: React.ReactNode;
+  icon: ReactNode;
   action?: () => void;
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
   return (
     <section>
