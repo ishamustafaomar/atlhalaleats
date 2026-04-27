@@ -20,7 +20,7 @@ export const Route = createFileRoute("/privacy")({
 });
 
 function PrivacyPage() {
-  const updated = "April 20, 2026";
+  const updated = "April 27, 2026";
   return (
     <div className="max-w-3xl mx-auto px-4 sm:px-6 py-12 sm:py-16">
       <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Legal</p>
@@ -129,6 +129,10 @@ function PrivacyPage() {
           <h2 className="font-display text-xl font-bold text-foreground">Your choices</h2>
           <ul className="mt-2 list-disc pl-6 space-y-2">
             <li>
+              <strong>Access your data</strong> — email us and we will provide a copy
+              of account-related data we store about you.
+            </li>
+            <li>
               <strong>Edit or delete your reviews and comments</strong> — you can do this
               at any time from a restaurant page while signed in.
             </li>
@@ -141,6 +145,18 @@ function PrivacyPage() {
               time.
             </li>
           </ul>
+        </section>
+
+        <section>
+          <h2 className="font-display text-xl font-bold text-foreground">
+            GDPR and international privacy rights
+          </h2>
+          <p className="mt-2">
+            If privacy laws such as GDPR apply to you, you may request access,
+            correction, deletion, restriction, or portability of your personal data,
+            and you may object to certain processing. We only use sign-in data to run
+            community features you choose to use, and we do not sell personal data.
+          </p>
         </section>
 
         <section>

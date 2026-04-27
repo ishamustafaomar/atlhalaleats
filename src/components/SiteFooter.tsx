@@ -61,6 +61,11 @@ export function SiteFooter() {
               </Link>
             </li>
             <li>
+              <Link to="/terms" className="text-muted-foreground hover:text-primary">
+                Terms of service
+              </Link>
+            </li>
+            <li>
               <a
                 href="mailto:hello@halalbites.net"
                 className="text-muted-foreground hover:text-primary"
@@ -74,7 +79,7 @@ export function SiteFooter() {
 
       <div className="border-t border-border">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-5 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-muted-foreground">
-          <p>© {year} ATL Halal Eats · Built with care 🌙</p>
+          <p>© {year} ATL Halal Eats · Privacy-first community guide</p>
           <p>
             Restaurant info from public sources. Always verify halal status with the
             restaurant directly.
