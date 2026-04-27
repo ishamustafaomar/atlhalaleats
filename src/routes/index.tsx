@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { zodValidator, fallback } from "@tanstack/zod-adapter";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
@@ -352,7 +352,7 @@ function Index() {
             <MapPin className="size-3 mr-1.5" /> Greater Atlanta
             <span className="mx-2 opacity-60">·</span>
             <Sparkles className="size-3 mr-1" />
-            {restaurants.length} verified spots
+            {restaurants.length} community spots
           </Badge>
 
           <h1 className="font-display font-bold text-5xl sm:text-7xl lg:text-8xl text-primary-foreground max-w-4xl leading-[0.95] tracking-tight drop-shadow-[0_2px_20px_rgba(0,0,0,0.4)]">
@@ -420,29 +420,60 @@ function Index() {
 
       {/* WEEKLY POLL BANNER */}
       <PollBanner />
-      {showFeatured && !loading && (
-        <section className="max-w-6xl mx-auto px-4 sm:px-6 pt-10">
-          <div className="flex items-end justify-between mb-5">
-            <div>
-              <div className="flex items-center gap-2 text-accent text-sm font-semibold uppercase tracking-wider">
-                <Trophy className="size-4" /> Top rated
-              </div>
-              <h2 className="font-display font-bold text-2xl sm:text-3xl text-foreground mt-1">
-                Community favorites
-              </h2>
-            </div>
-            <button
-              onClick={() => setSort("top")}
-              className="text-sm font-medium text-primary hover:underline inline-flex items-center gap-1"
+      {showGuides && (
+        <section className="max-w-6xl mx-auto px-4 sm:px-6 pt-10 space-y-10">
+          {topRated.length > 0 && (
+            <DiscoveryRail
+              eyebrow="Top rated spots"
+              title="Start with places locals already trust"
+              icon={<Trophy className="size-4" />}
+              action={() => setSort("top")}
             >
-              See all <ChevronRight className="size-4" />
-            </button>
-          </div>
-          <div className="flex gap-4 overflow-x-auto scrollbar-hide -mx-4 sm:-mx-6 px-4 sm:px-6 pb-2 snap-x snap-mandatory">
-            {featured.map((r, idx) => (
-              <FeaturedCard key={r.id} restaurant={r} rank={idx + 1} />
-            ))}
-          </div>
+              {topRated.map((r, idx) => (
+                <FeaturedCard key={r.id} restaurant={r} rank={idx + 1} />
+              ))}
+            </DiscoveryRail>
+          )}
+
+          {nearMe.length > 0 ? (
+            <DiscoveryRail
+              eyebrow="Near me"
+              title="Good options close to you"
+              icon={<Navigation className="size-4" />}
+            >
+              {nearMe.map(({ restaurant, distance }) => (
+                <FeaturedCard key={restaurant.id} restaurant={restaurant} distanceKm={distance} />
+              ))}
+            </DiscoveryRail>
+          ) : (
+            <section className="rounded-3xl border border-border bg-card/70 p-5 sm:p-6 shadow-[var(--shadow-soft)]">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div>
+                  <div className="flex items-center gap-2 text-primary text-sm font-semibold uppercase tracking-wider">
+                    <MapPin className="size-4" /> Map based discovery
+                  </div>
+                  <h2 className="font-display font-bold text-2xl sm:text-3xl text-foreground mt-1">
+                    Turn on location to see nearby halal picks
+                  </h2>
+                </div>
+                <Button variant="outline" className="rounded-xl" onClick={() => window.location.reload()}>
+                  <Navigation className="size-4" /> Enable nearby
+                </Button>
+              </div>
+            </section>
+          )}
+
+          {hiddenGems.length > 0 && (
+            <DiscoveryRail
+              eyebrow="Hidden gems"
+              title="High ratings without the hype"
+              icon={<Sparkles className="size-4" />}
+            >
+              {hiddenGems.map((r) => (
+                <FeaturedCard key={r.id} restaurant={r} />
+              ))}
+            </DiscoveryRail>
+          )}
         </section>
       )}
 
