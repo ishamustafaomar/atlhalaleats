@@ -14,8 +14,14 @@ type Props = {
 
 const BAD_IMAGE_FRAGMENTS = [
   "fonts.gstatic.com/s/i/productlogos/googleg",
+  "gstatic.com/images/branding",
+  "gstatic.com/s2/favicons",
   "google.com/logos",
   "google.com/images/branding",
+  "/productlogos/",
+  "googleg_",
+  "google_g_logo",
+  "google-logo",
   "ssl.gstatic.com/gb/images",
   "googlelogo",
   "/favicon",
@@ -45,7 +51,7 @@ export function RestaurantLogo({
   const [failedUrls, setFailedUrls] = useState<string[]>([]);
 
   const candidateUrls = useMemo(() => {
-    const urls = [logoUrl, ...(photoUrls ?? [])].filter(isUsableRestaurantImage) as string[];
+    const urls = [...(photoUrls ?? []), logoUrl].filter(isUsableRestaurantImage) as string[];
     return Array.from(new Set(urls));
   }, [logoUrl, photoUrls]);
 
