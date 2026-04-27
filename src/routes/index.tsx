@@ -501,6 +501,7 @@ function Index() {
               )}
             </h2>
             <p className="text-sm text-muted-foreground mt-1.5">
+              <span className="font-medium text-foreground">{visibleRestaurants.length}</span> of{" "}
               <span className="font-medium text-foreground">{filtered.length}</span>{" "}
               {filtered.length === 1 ? "place" : "places"}
               {sort !== "popular" && (
@@ -567,13 +568,6 @@ function Index() {
             </button>
           </div>
         )}
-        {!loading && !hasFilters && !showAll && filtered.length > visibleRestaurants.length && (
-          <div className="mt-8 flex justify-center">
-            <Button variant="outline" className="rounded-xl" onClick={() => setShowAll(true)}>
-              Show all {filtered.length} spots
-            </Button>
-          </div>
-        )}
       </section>
 
       {/* GRID */}
@@ -606,6 +600,13 @@ function Index() {
                 winner={winners.get(r.id) ?? null}
               />
             ))}
+          </div>
+        )}
+        {!loading && !hasFilters && !showAll && filtered.length > visibleRestaurants.length && (
+          <div className="mt-8 flex justify-center">
+            <Button variant="outline" className="rounded-xl" onClick={() => setShowAll(true)}>
+              Show all {filtered.length} spots
+            </Button>
           </div>
         )}
       </section>
