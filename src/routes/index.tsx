@@ -323,6 +323,11 @@ function Index() {
           <p className="mt-6 text-lg sm:text-xl text-primary-foreground/95 max-w-xl leading-relaxed drop-shadow-[0_1px_8px_rgba(0,0,0,0.3)]">
             Honest reviews, ratings, and conversation around the city's best halal kitchens.
           </p>
+          {!user && (
+            <p className="mt-3 text-sm text-primary-foreground/85 max-w-xl drop-shadow-[0_1px_8px_rgba(0,0,0,0.3)]">
+              Browsing is free. Sign in only to review, vote, comment, or add a restaurant.
+            </p>
+          )}
 
           {/* Search */}
           <div className="mt-10 max-w-2xl">
