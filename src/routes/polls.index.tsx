@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Vote, Trophy, ArrowRight, Calendar } from "lucide-react";
+import { Vote, Trophy, ArrowRight, Calendar, ArrowLeft } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 export const Route = createFileRoute("/polls/")({
@@ -54,6 +54,13 @@ function PollsPage() {
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 py-12">
+      <Link
+        to="/"
+        className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground mb-6"
+      >
+        <ArrowLeft className="size-4" /> Home
+      </Link>
+
       <div className="mb-10">
         <div className="flex items-center gap-2 text-accent text-sm font-semibold uppercase tracking-wider">
           <Vote className="size-4" /> Community polls
