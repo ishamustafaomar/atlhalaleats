@@ -3,7 +3,7 @@ import { useAuth } from "@/lib/auth";
 
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { LogOut, Vote } from "lucide-react";
+import { Home, LogOut, Vote } from "lucide-react";
 import logoUrl from "@/assets/atl-halal-eats-logo.png";
 
 export function SiteHeader() {
@@ -34,7 +34,17 @@ export function SiteHeader() {
             activeProps={{ className: "text-primary" }}
             activeOptions={{ exact: true }}
           >
+            <Home className="size-4" />
             Home
+          </Link>
+          <Link
+            to="/"
+            className="sm:hidden text-foreground hover:text-primary"
+            aria-label="Home"
+            activeProps={{ className: "text-primary" }}
+            activeOptions={{ exact: true }}
+          >
+            <Home className="size-5" />
           </Link>
           <Link
             to="/polls"
