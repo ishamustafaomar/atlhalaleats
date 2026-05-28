@@ -427,6 +427,52 @@ function Index() {
         </div>
       </section>
 
+      {/* QUICK QUALITY + MAP TOGGLE */}
+      <section className="max-w-6xl mx-auto px-4 sm:px-6 pt-5">
+        <div className="flex flex-wrap items-center gap-2 justify-between">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mr-1">
+              Quality
+            </span>
+            <QuickChip active={minRating === "0"} onClick={() => setMinRating("0")}>
+              Any rating
+            </QuickChip>
+            <QuickChip active={minRating === "4"} onClick={() => setMinRating("4")}>
+              <Star className="size-3 fill-accent text-accent" /> 4.0 & up
+            </QuickChip>
+            <QuickChip active={minRating === "4.5"} onClick={() => setMinRating("4.5")}>
+              <Star className="size-3 fill-accent text-accent" /> 4.5 & up
+            </QuickChip>
+          </div>
+          <Button
+            variant={showMap ? "default" : "outline"}
+            className="h-9 rounded-xl"
+            onClick={() => setShowMap((v) => !v)}
+          >
+            <MapIcon className="size-4" />
+            {showMap ? "Hide map" : "Show map"}
+          </Button>
+        </div>
+        {showMap && (
+          <div className="mt-4">
+            <RestaurantMap
+              restaurants={filtered.map((r) => ({
+                id: r.id,
+                name: r.name,
+                cuisine: r.cuisine,
+                avg_rating: r.avg_rating,
+                latitude: r.latitude,
+                longitude: r.longitude,
+              }))}
+              userLocation={userLocation}
+            />
+            <p className="mt-2 text-xs text-muted-foreground text-center">
+              Showing {filtered.filter((r) => r.latitude && r.longitude).length} of {filtered.length} spots on the map · click a pin for details
+            </p>
+          </div>
+        )}
+      </section>
+
       {/* WEEKLY POLL BANNER */}
       <PollBanner />
       {showGuides && (
