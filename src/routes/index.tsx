@@ -190,7 +190,7 @@ function Index() {
   useEffect(() => {
     const t = setTimeout(() => {
       if (localQ !== q) {
-        navigate({ search: { q: localQ, sort, cuisine }, replace: true, resetScroll: false });
+        navigate({ search: { q: localQ, sort, cuisine, minRating }, replace: true, resetScroll: false });
       }
     }, 250);
     return () => clearTimeout(t);
