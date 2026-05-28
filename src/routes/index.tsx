@@ -49,6 +49,7 @@ const searchSchema = z.object({
   q: fallback(z.string(), "").default(""),
   sort: fallback(z.enum(["top", "popular", "newest", "name"]), "popular").default("popular"),
   cuisine: fallback(z.string(), "").default(""),
+  minRating: fallback(z.enum(["0", "4", "4.5"]), "0").default("0"),
 });
 
 export const Route = createFileRoute("/")({
