@@ -287,13 +287,16 @@ function Index() {
 
   const filtered = useMemo(() => {
     const term = q.trim().toLowerCase();
+    const ratingFloor = Number(minRating);
     let list = restaurants.filter((r) => {
       const matchesTerm =
         !term ||
         r.name.toLowerCase().includes(term) ||
         (r.cuisine ?? "").toLowerCase().includes(term);
       const matchesCuisine = !cuisine || categoriesFor(r).includes(cuisine);
-      return matchesTerm && matchesCuisine;
+      const effectiveRating = Math.max(Number(r.avg_rating ?? 0), Number(r.google_rating ?? 0));
+      const matchesRating = ratingFloor === 0 || effectiveRating >= ratingFloor;
+      return matchesTerm && matchesCuisine && matchesRating;
     });
 
     list = [...list].sort((a, b) => {
@@ -317,16 +320,18 @@ function Index() {
       }
     });
     return list;
-  }, [restaurants, q, sort, cuisine]);
+  }, [restaurants, q, sort, cuisine, minRating]);
 
   const setSort = (v: SortKey) =>
-    navigate({ search: { q, sort: v, cuisine }, replace: true, resetScroll: false });
+    navigate({ search: { q, sort: v, cuisine, minRating }, replace: true, resetScroll: false });
   const setCuisine = (v: string) =>
-    navigate({ search: { q, sort, cuisine: v }, replace: true, resetScroll: false });
+    navigate({ search: { q, sort, cuisine: v, minRating }, replace: true, resetScroll: false });
+  const setMinRating = (v: "0" | "4" | "4.5") =>
+    navigate({ search: { q, sort, cuisine, minRating: v }, replace: true, resetScroll: false });
   const clearFilters = () =>
-    navigate({ search: { q: "", sort: "popular", cuisine: "" }, replace: true, resetScroll: false });
+    navigate({ search: { q: "", sort: "popular", cuisine: "", minRating: "0" }, replace: true, resetScroll: false });
 
-  const hasFilters = q || cuisine || sort !== "popular";
+  const hasFilters = q || cuisine || sort !== "popular" || minRating !== "0";
   const showGuides = !hasFilters && !loading;
   const visibleRestaurants = !hasFilters && !showAll ? filtered.slice(0, 12) : filtered;
 
