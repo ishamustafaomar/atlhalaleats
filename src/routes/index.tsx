@@ -605,7 +605,7 @@ function Index() {
                 label={`"${q}"`}
                 onRemove={() => {
                   setLocalQ("");
-                  navigate({ search: { q: "", sort, cuisine }, replace: true, resetScroll: false });
+                  navigate({ search: { q: "", sort, cuisine, minRating }, replace: true, resetScroll: false });
                 }}
               />
             )}
@@ -613,6 +613,12 @@ function Index() {
               <FilterChip
                 label={CATEGORIES.find((c) => c.key === cuisine)?.label ?? cuisine}
                 onRemove={() => setCuisine("")}
+              />
+            )}
+            {minRating !== "0" && (
+              <FilterChip
+                label={`${minRating}★ & up`}
+                onRemove={() => setMinRating("0")}
               />
             )}
             <button
