@@ -169,8 +169,9 @@ function gradientFor(id: string): string {
 }
 
 function Index() {
-  const { q, sort, cuisine } = Route.useSearch();
+  const { q, sort, cuisine, minRating } = Route.useSearch();
   const navigate = Route.useNavigate();
+  const [showMap, setShowMap] = useState(false);
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
   const [loading, setLoading] = useState(true);
   const [addOpen, setAddOpen] = useState(false);
