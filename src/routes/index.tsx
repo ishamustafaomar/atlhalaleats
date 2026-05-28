@@ -953,3 +953,26 @@ function FilterChip({ label, onRemove }: { label: string; onRemove: () => void }
     </span>
   );
 }
+
+function QuickChip({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  children: ReactNode;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition-all ${
+        active
+          ? "bg-foreground text-background border-foreground shadow-sm"
+          : "bg-card text-foreground border-border hover:border-primary/40 hover:bg-primary/5"
+      }`}
+    >
+      {children}
+    </button>
+  );
+}
