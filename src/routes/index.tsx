@@ -20,7 +20,9 @@ import {
   Navigation,
   MessageSquare,
   Star,
+  Map as MapIcon,
 } from "lucide-react";
+import { RestaurantMap } from "@/components/RestaurantMap";
 import { Button } from "@/components/ui/button";
 import { AddRestaurantDialog } from "@/components/AddRestaurantDialog";
 import { PollBanner } from "@/components/PollBanner";
