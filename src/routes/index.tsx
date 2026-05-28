@@ -20,7 +20,9 @@ import {
   Navigation,
   MessageSquare,
   Star,
+  Map as MapIcon,
 } from "lucide-react";
+import { RestaurantMap } from "@/components/RestaurantMap";
 import { Button } from "@/components/ui/button";
 import { AddRestaurantDialog } from "@/components/AddRestaurantDialog";
 import { PollBanner } from "@/components/PollBanner";
@@ -47,6 +49,7 @@ const searchSchema = z.object({
   q: fallback(z.string(), "").default(""),
   sort: fallback(z.enum(["top", "popular", "newest", "name"]), "popular").default("popular"),
   cuisine: fallback(z.string(), "").default(""),
+  minRating: fallback(z.enum(["0", "4", "4.5"]), "0").default("0"),
 });
 
 export const Route = createFileRoute("/")({
@@ -166,8 +169,9 @@ function gradientFor(id: string): string {
 }
 
 function Index() {
-  const { q, sort, cuisine } = Route.useSearch();
+  const { q, sort, cuisine, minRating } = Route.useSearch();
   const navigate = Route.useNavigate();
+  const [showMap, setShowMap] = useState(false);
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
   const [loading, setLoading] = useState(true);
   const [addOpen, setAddOpen] = useState(false);
@@ -186,7 +190,7 @@ function Index() {
   useEffect(() => {
     const t = setTimeout(() => {
       if (localQ !== q) {
-        navigate({ search: { q: localQ, sort, cuisine }, replace: true, resetScroll: false });
+        navigate({ search: { q: localQ, sort, cuisine, minRating }, replace: true, resetScroll: false });
       }
     }, 250);
     return () => clearTimeout(t);
@@ -283,13 +287,16 @@ function Index() {
 
   const filtered = useMemo(() => {
     const term = q.trim().toLowerCase();
+    const ratingFloor = Number(minRating);
     let list = restaurants.filter((r) => {
       const matchesTerm =
         !term ||
         r.name.toLowerCase().includes(term) ||
         (r.cuisine ?? "").toLowerCase().includes(term);
       const matchesCuisine = !cuisine || categoriesFor(r).includes(cuisine);
-      return matchesTerm && matchesCuisine;
+      const effectiveRating = Math.max(Number(r.avg_rating ?? 0), Number(r.google_rating ?? 0));
+      const matchesRating = ratingFloor === 0 || effectiveRating >= ratingFloor;
+      return matchesTerm && matchesCuisine && matchesRating;
     });
 
     list = [...list].sort((a, b) => {
@@ -313,16 +320,18 @@ function Index() {
       }
     });
     return list;
-  }, [restaurants, q, sort, cuisine]);
+  }, [restaurants, q, sort, cuisine, minRating]);
 
   const setSort = (v: SortKey) =>
-    navigate({ search: { q, sort: v, cuisine }, replace: true, resetScroll: false });
+    navigate({ search: { q, sort: v, cuisine, minRating }, replace: true, resetScroll: false });
   const setCuisine = (v: string) =>
-    navigate({ search: { q, sort, cuisine: v }, replace: true, resetScroll: false });
+    navigate({ search: { q, sort, cuisine: v, minRating }, replace: true, resetScroll: false });
+  const setMinRating = (v: "0" | "4" | "4.5") =>
+    navigate({ search: { q, sort, cuisine, minRating: v }, replace: true, resetScroll: false });
   const clearFilters = () =>
-    navigate({ search: { q: "", sort: "popular", cuisine: "" }, replace: true, resetScroll: false });
+    navigate({ search: { q: "", sort: "popular", cuisine: "", minRating: "0" }, replace: true, resetScroll: false });
 
-  const hasFilters = q || cuisine || sort !== "popular";
+  const hasFilters = q || cuisine || sort !== "popular" || minRating !== "0";
   const showGuides = !hasFilters && !loading;
   const visibleRestaurants = !hasFilters && !showAll ? filtered.slice(0, 12) : filtered;
 
@@ -416,6 +425,52 @@ function Index() {
             ))}
           </div>
         </div>
+      </section>
+
+      {/* QUICK QUALITY + MAP TOGGLE */}
+      <section className="max-w-6xl mx-auto px-4 sm:px-6 pt-5">
+        <div className="flex flex-wrap items-center gap-2 justify-between">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mr-1">
+              Quality
+            </span>
+            <QuickChip active={minRating === "0"} onClick={() => setMinRating("0")}>
+              Any rating
+            </QuickChip>
+            <QuickChip active={minRating === "4"} onClick={() => setMinRating("4")}>
+              <Star className="size-3 fill-accent text-accent" /> 4.0 & up
+            </QuickChip>
+            <QuickChip active={minRating === "4.5"} onClick={() => setMinRating("4.5")}>
+              <Star className="size-3 fill-accent text-accent" /> 4.5 & up
+            </QuickChip>
+          </div>
+          <Button
+            variant={showMap ? "default" : "outline"}
+            className="h-9 rounded-xl"
+            onClick={() => setShowMap((v) => !v)}
+          >
+            <MapIcon className="size-4" />
+            {showMap ? "Hide map" : "Show map"}
+          </Button>
+        </div>
+        {showMap && (
+          <div className="mt-4">
+            <RestaurantMap
+              restaurants={filtered.map((r) => ({
+                id: r.id,
+                name: r.name,
+                cuisine: r.cuisine,
+                avg_rating: r.avg_rating,
+                latitude: r.latitude,
+                longitude: r.longitude,
+              }))}
+              userLocation={userLocation}
+            />
+            <p className="mt-2 text-xs text-muted-foreground text-center">
+              Showing {filtered.filter((r) => r.latitude && r.longitude).length} of {filtered.length} spots on the map · click a pin for details
+            </p>
+          </div>
+        )}
       </section>
 
       {/* WEEKLY POLL BANNER */}
@@ -550,7 +605,7 @@ function Index() {
                 label={`"${q}"`}
                 onRemove={() => {
                   setLocalQ("");
-                  navigate({ search: { q: "", sort, cuisine }, replace: true, resetScroll: false });
+                  navigate({ search: { q: "", sort, cuisine, minRating }, replace: true, resetScroll: false });
                 }}
               />
             )}
@@ -558,6 +613,12 @@ function Index() {
               <FilterChip
                 label={CATEGORIES.find((c) => c.key === cuisine)?.label ?? cuisine}
                 onRemove={() => setCuisine("")}
+              />
+            )}
+            {minRating !== "0" && (
+              <FilterChip
+                label={`${minRating}★ & up`}
+                onRemove={() => setMinRating("0")}
               />
             )}
             <button
@@ -890,5 +951,28 @@ function FilterChip({ label, onRemove }: { label: string; onRemove: () => void }
         <X className="size-3" />
       </button>
     </span>
+  );
+}
+
+function QuickChip({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  children: ReactNode;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition-all ${
+        active
+          ? "bg-foreground text-background border-foreground shadow-sm"
+          : "bg-card text-foreground border-border hover:border-primary/40 hover:bg-primary/5"
+      }`}
+    >
+      {children}
+    </button>
   );
 }
