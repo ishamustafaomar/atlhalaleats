@@ -5,7 +5,7 @@ import { Vote, Trophy, ArrowRight, Calendar, ArrowLeft } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 export const Route = createFileRoute("/polls/")({
-  head: () => ({
+  head: () => ({ links: [{ rel: "canonical", href: "https://halalbites.net/polls" }],
     meta: [
       { title: "Weekly Polls — ATL Halal Eats" },
       {

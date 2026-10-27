@@ -54,6 +54,16 @@ const searchSchema = z.object({
 
 export const Route = createFileRoute("/")({
   validateSearch: zodValidator(searchSchema),
+  head: () => ({
+    meta: [
+      { title: "ATL Halal Eats — Find the Best Halal Food in Atlanta" },
+      { name: "description", content: "Community-rated halal restaurants across Atlanta. Top spots, hidden gems, and places near you." },
+      { property: "og:title", content: "ATL Halal Eats — Find the Best Halal Food in Atlanta" },
+      { property: "og:description", content: "Community-rated halal restaurants across Atlanta." },
+      { property: "og:url", content: "https://halalbites.net/" },
+    ],
+    links: [{ rel: "canonical", href: "https://halalbites.net/" }],
+  }),
   component: Index,
 });
 

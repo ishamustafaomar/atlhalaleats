@@ -4,7 +4,7 @@ import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Home, LogOut, Vote } from "lucide-react";
-import logoUrl from "@/assets/atl-halal-eats-logo.png";
+import logoUrl from "@/assets/atl-halal-eats-logo.webp";
 
 export function SiteHeader() {
   const { user, signInWithGoogle, signOut, loading } = useAuth();
@@ -39,7 +39,7 @@ export function SiteHeader() {
           </Link>
           <Link
             to="/"
-            className="sm:hidden text-foreground hover:text-primary"
+            className="sm:hidden inline-flex items-center justify-center size-11 text-foreground hover:text-primary"
             aria-label="Home"
             activeProps={{ className: "text-primary" }}
             activeOptions={{ exact: true }}
@@ -56,7 +56,7 @@ export function SiteHeader() {
           </Link>
           <Link
             to="/polls"
-            className="sm:hidden text-foreground hover:text-primary"
+            className="sm:hidden inline-flex items-center justify-center size-11 text-foreground hover:text-primary"
             aria-label="Polls"
           >
             <Vote className="size-5" />

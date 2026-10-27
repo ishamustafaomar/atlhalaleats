@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 
 export const Route = createFileRoute("/polls/$slug")({
-  head: () => ({
+  head: ({ params }) => ({ links: [{ rel: "canonical", href: `https://halalbites.net/polls/${params.slug}` }],
     meta: [
       { title: "Weekly Poll — ATL Halal Eats" },
       {

@@ -29,6 +29,17 @@ import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 
 export const Route = createFileRoute("/restaurant/$id")({
+  head: ({ params }) => ({
+    meta: [
+      { title: "Halal Restaurant Reviews — ATL Halal Eats" },
+      { name: "description", content: "Ratings, reviews, hours and photos for this Atlanta halal restaurant." },
+      { property: "og:title", content: "Halal Restaurant Reviews — ATL Halal Eats" },
+      { property: "og:description", content: "Ratings, reviews, hours and photos for this Atlanta halal restaurant." },
+      { property: "og:type", content: "article" },
+      { property: "og:url", content: `https://halalbites.net/restaurant/${params.id}` },
+    ],
+    links: [{ rel: "canonical", href: `https://halalbites.net/restaurant/${params.id}` }],
+  }),
   component: RestaurantPage,
 });
 
@@ -123,10 +134,9 @@ function RestaurantPage() {
     const profilesMap: Record<string, { display_name: string | null; avatar_url: string | null }> =
       {};
     if (userIds.length) {
-      const { data: profs } = await supabase
-        .from("profiles")
-        .select("id,display_name,avatar_url")
-        .in("id", userIds);
+      const { data: profs } = await (supabase.rpc as any)("get_public_profiles", {
+        _ids: userIds,
+      }) as { data: { id: string; display_name: string | null; avatar_url: string | null }[] | null };
       profs?.forEach((p) => {
         profilesMap[p.id] = { display_name: p.display_name, avatar_url: p.avatar_url };
       });

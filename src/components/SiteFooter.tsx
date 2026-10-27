@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import logoUrl from "@/assets/atl-halal-eats-logo.png";
+import logoUrl from "@/assets/atl-halal-eats-logo.webp";
 
 /**
  * Real footer with brand mark, navigation, and legal/contact links.
