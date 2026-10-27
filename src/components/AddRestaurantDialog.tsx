@@ -15,7 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { Navigation, Loader2, Check, ImagePlus, X } from "lucide-react";
-import { enrichRestaurant } from "@/server/places.functions";
+import { enrichRestaurant } from "@/lib/places.functions";
 
 export function AddRestaurantDialog({
   open,
