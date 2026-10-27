@@ -326,6 +326,14 @@ export type Database = {
         Args: { _poll_id: string; _restaurant_ids: string[] }
         Returns: string
       }
+      get_public_profiles: {
+        Args: { _ids: string[] }
+        Returns: {
+          avatar_url: string
+          display_name: string
+          id: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
