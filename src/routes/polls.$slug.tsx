@@ -174,6 +174,33 @@ function PollDetail() {
     [candidates],
   );
 
+  const nomMatches = useMemo(() => {
+    const q = nomQuery.trim().toLowerCase();
+    if (!q) return [];
+    return allRestaurants
+      .filter((r) => !picks.includes(r.id))
+      .filter((r) =>
+        `${r.name} ${r.cuisine ?? ""}`.toLowerCase().includes(q),
+      )
+      .slice(0, 6);
+  }, [nomQuery, allRestaurants, picks]);
+
+  const nominate = (id: string) => {
+    if (picks.includes(id)) return;
+    if (picks.length >= 5) {
+      toast.error("You can only rank 5 restaurants. Remove one first.");
+      return;
+    }
+    setCandidates((prev) =>
+      prev.some((c) => c.id === id)
+        ? prev
+        : [...prev, ...allRestaurants.filter((r) => r.id === id)],
+    );
+    setPicks((prev) => [...prev, id]);
+    setNomQuery("");
+    toast.success("Added to your ballot.");
+  };
+
   const togglePick = (id: string) => {
     setPicks((prev) => {
       if (prev.includes(id)) return prev.filter((p) => p !== id);
