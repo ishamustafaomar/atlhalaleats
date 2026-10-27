@@ -70,8 +70,8 @@ function PollsPage() {
         </h1>
         <p className="mt-3 text-muted-foreground max-w-2xl">
           Each week we run a poll based on what Atlanta is searching for. Rank
-          your top 5 — winners are decided by a points system (1st = 5pts, 2nd =
-          4, etc.).
+          your top 5 — winners are decided by ranked-choice voting, and you can
+          nominate any spot we missed.
         </p>
       </div>
 
