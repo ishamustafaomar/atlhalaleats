@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/terms")({
-  head: () => ({
+  head: () => ({ links: [{ rel: "canonical", href: "https://halalbites.net/terms" }],
     meta: [
       { title: "Terms of Service — ATL Halal Eats" },
       {
