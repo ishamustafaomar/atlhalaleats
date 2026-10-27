@@ -1,6 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+
+// supabaseAdmin is server-only and must stay out of the client module graph,
+// so it is loaded lazily inside each handler via await import().
 
 const PLACES_SEARCH_URL = "https://places.googleapis.com/v1/places:searchText";
 const FIELD_MASK = [
@@ -239,6 +241,7 @@ export const enrichRestaurant = createServerFn({ method: "POST" })
   })
   .handler(async ({ data }) => {
     try {
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
       if (!data.restaurantId) {
         return { ok: false as const, reason: "restaurantId required" };
       }
@@ -298,6 +301,7 @@ export const backfillRestaurantDetails = createServerFn({ method: "POST" })
   }))
   .handler(async ({ data }) => {
     try {
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
       if (!process.env.GOOGLE_PLACES_API_KEY) {
         return {
           processed: 0,

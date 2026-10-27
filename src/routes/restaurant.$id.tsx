@@ -22,7 +22,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
-import { enrichRestaurant } from "@/server/places.functions";
+import { enrichRestaurant } from "@/lib/places.functions";
 import { RestaurantLogo } from "@/components/RestaurantLogo";
 import { RestaurantPhotoGallery } from "@/components/RestaurantPhotoGallery";
 import { toast } from "sonner";

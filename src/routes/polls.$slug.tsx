@@ -12,9 +12,28 @@ import {
   ArrowLeft,
   X,
   Calendar,
+  Search,
+  Plus,
 } from "lucide-react";
 
 export const Route = createFileRoute("/polls/$slug")({
+  head: () => ({
+    meta: [
+      { title: "Weekly Poll — ATL Halal Eats" },
+      {
+        name: "description",
+        content:
+          "Rank your favorite Atlanta halal spots in this week's community poll — ranked-choice voting, live results.",
+      },
+      { property: "og:title", content: "Weekly Poll — ATL Halal Eats" },
+      {
+        property: "og:description",
+        content: "Rank your favorite Atlanta halal spots in this week's community poll.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
   component: PollDetail,
   notFoundComponent: () => (
     <div className="max-w-md mx-auto py-20 text-center">
@@ -64,6 +83,8 @@ function PollDetail() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [tab, setTab] = useState<"vote" | "results">("vote");
+  const [allRestaurants, setAllRestaurants] = useState<Restaurant[]>([]);
+  const [nomQuery, setNomQuery] = useState("");
 
   useEffect(() => {
     let cancelled = false;
@@ -89,13 +110,21 @@ function PollDetail() {
         .select("id,name,cuisine,note,avg_rating,review_count,logo_url,photo_urls")
         .order("avg_rating", { ascending: false });
       if (cancelled) return;
+      setAllRestaurants((allRestaurants ?? []) as Restaurant[]);
 
       const cuisineTerm = (p.cuisine ?? "").trim().toLowerCase();
+      // Dish-specific keywords only — generic terms like "halal" or
+      // "mediterranean" match nearly the whole directory and push actual
+      // dish spots out of the shortlist.
       const relatedKeywords: Record<string, string[]> = {
-        shawarma: ["shawarma", "mediterranean", "halal", "arab", "lebanese", "syrian", "turkish", "kebab", "yemen", "persian"],
-        biryani: ["biryani", "indian", "pakistani", "halal", "hyderabad"],
-        kebab: ["kebab", "turkish", "persian", "mediterranean", "halal", "arab"],
-        mediterranean: ["mediterranean", "lebanese", "greek", "halal", "arab"],
+        shawarma: ["shawarma", "shwarma", "shawerma"],
+        biryani: ["biryani", "briyani", "hyderabadi"],
+        kebab: ["kebab", "kabab", "kabob", "koobideh"],
+        burger: ["burger"],
+        wings: ["wings"],
+        pizza: ["pizza"],
+        "fried chicken": ["fried chicken", "chicken fingers", "tenders"],
+        tacos: ["taco"],
       };
       const keywords = (relatedKeywords[cuisineTerm] ?? [cuisineTerm]).filter(Boolean);
       const matches = (allRestaurants ?? []).filter((r) => {
@@ -144,6 +173,33 @@ function PollDetail() {
     () => new Map(candidates.map((c) => [c.id, c])),
     [candidates],
   );
+
+  const nomMatches = useMemo(() => {
+    const q = nomQuery.trim().toLowerCase();
+    if (!q) return [];
+    return allRestaurants
+      .filter((r) => !picks.includes(r.id))
+      .filter((r) =>
+        `${r.name} ${r.cuisine ?? ""}`.toLowerCase().includes(q),
+      )
+      .slice(0, 6);
+  }, [nomQuery, allRestaurants, picks]);
+
+  const nominate = (id: string) => {
+    if (picks.includes(id)) return;
+    if (picks.length >= 5) {
+      toast.error("You can only rank 5 restaurants. Remove one first.");
+      return;
+    }
+    setCandidates((prev) =>
+      prev.some((c) => c.id === id)
+        ? prev
+        : [...prev, ...allRestaurants.filter((r) => r.id === id)],
+    );
+    setPicks((prev) => [...prev, id]);
+    setNomQuery("");
+    toast.success("Added to your ballot.");
+  };
 
   const togglePick = (id: string) => {
     setPicks((prev) => {
@@ -342,12 +398,17 @@ function PollDetail() {
 
           {/* Candidates */}
           <div>
-            <h3 className="font-display font-bold text-lg mb-3">
+            <h3 className="font-display font-bold text-lg mb-1">
               Candidates{" "}
               <span className="text-sm font-normal text-muted-foreground">
                 ({candidates.length})
               </span>
             </h3>
+            <p className="text-xs text-muted-foreground mb-3">
+              A curated shortlist of Atlanta spots known for{" "}
+              {poll.cuisine ?? "this category"}, ordered by community rating.
+              Missing yours? Search and add it below.
+            </p>
             {candidates.length === 0 ? (
               <div className="border border-dashed border-border rounded-xl p-8 text-center text-sm text-muted-foreground">
                 No restaurants tagged with "{poll.cuisine}" yet. Add one from the home page.
@@ -401,6 +462,59 @@ function PollDetail() {
                 })}
               </ul>
             )}
+
+            {/* Nominate a missing spot */}
+            <div className="mt-6 border-t border-border pt-4">
+              <h4 className="font-semibold text-sm">Missing your spot?</h4>
+              <p className="text-xs text-muted-foreground mb-3">
+                Search the directory and add any restaurant to your ballot.
+              </p>
+              <div className="relative">
+                <Search className="size-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <input
+                  value={nomQuery}
+                  onChange={(e) => setNomQuery(e.target.value)}
+                  placeholder="Search restaurants…"
+                  className="w-full h-10 pl-9 pr-3 rounded-lg border border-input bg-background text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                />
+              </div>
+              {nomQuery.trim() && (
+                <ul className="mt-2 space-y-1.5">
+                  {nomMatches.length === 0 ? (
+                    <li className="text-xs text-muted-foreground px-1 py-2">
+                      No matches. You can add it from the home page first.
+                    </li>
+                  ) : (
+                    nomMatches.map((r) => (
+                      <li key={r.id}>
+                        <button
+                          onClick={() => nominate(r.id)}
+                          className="w-full flex items-center gap-3 p-2.5 rounded-lg border border-border bg-card hover:border-primary/50 text-left transition-colors"
+                        >
+                          <RestaurantLogo
+                            name={r.name}
+                            logoUrl={r.logo_url}
+                            photoUrls={r.photo_urls}
+                            emoji="🍽️"
+                            emojiSize="text-lg"
+                            className="size-8 rounded-md bg-muted shrink-0"
+                          />
+                          <div className="flex-1 min-w-0">
+                            <div className="font-semibold text-sm truncate">{r.name}</div>
+                            {r.cuisine && (
+                              <div className="text-xs text-muted-foreground truncate">
+                                {r.cuisine}
+                              </div>
+                            )}
+                          </div>
+                          <Plus className="size-4 text-primary shrink-0" />
+                        </button>
+                      </li>
+                    ))
+                  )}
+                </ul>
+              )}
+            </div>
           </div>
         </div>
       ) : (

@@ -9,19 +9,19 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as TermsRouteImport } from './routes/terms'
-import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as PollsIndexRouteImport } from './routes/polls.index'
-import { Route as RestaurantIdRouteImport } from './routes/restaurant.$id'
-import { Route as PollsSlugRouteImport } from './routes/polls.$slug'
-import { Route as ApiFirecrawlDetailsRouteImport } from './routes/api.firecrawl-details'
-import { Route as ApiFirecrawlBackfillRouteImport } from './routes/api.firecrawl-backfill'
+import { Route as PrivacyRouteImport } from './routes/privacy'
+import { Route as TermsRouteImport } from './routes/terms'
 import { Route as AdminPollsRouteImport } from './routes/admin.polls'
+import { Route as ApiFirecrawlBackfillRouteImport } from './routes/api.firecrawl-backfill'
+import { Route as ApiFirecrawlDetailsRouteImport } from './routes/api.firecrawl-details'
+import { Route as PollsIndexRouteImport } from './routes/polls.index'
+import { Route as PollsSlugRouteImport } from './routes/polls.$slug'
+import { Route as RestaurantIdRouteImport } from './routes/restaurant.$id'
 
-const TermsRoute = TermsRouteImport.update({
-  id: '/terms',
-  path: '/terms',
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PrivacyRoute = PrivacyRouteImport.update({
@@ -29,29 +29,14 @@ const PrivacyRoute = PrivacyRouteImport.update({
   path: '/privacy',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const TermsRoute = TermsRouteImport.update({
+  id: '/terms',
+  path: '/terms',
   getParentRoute: () => rootRouteImport,
 } as any)
-const PollsIndexRoute = PollsIndexRouteImport.update({
-  id: '/polls/',
-  path: '/polls/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const RestaurantIdRoute = RestaurantIdRouteImport.update({
-  id: '/restaurant/$id',
-  path: '/restaurant/$id',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PollsSlugRoute = PollsSlugRouteImport.update({
-  id: '/polls/$slug',
-  path: '/polls/$slug',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiFirecrawlDetailsRoute = ApiFirecrawlDetailsRouteImport.update({
-  id: '/api/firecrawl-details',
-  path: '/api/firecrawl-details',
+const AdminPollsRoute = AdminPollsRouteImport.update({
+  id: '/admin/polls',
+  path: '/admin/polls',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiFirecrawlBackfillRoute = ApiFirecrawlBackfillRouteImport.update({
@@ -59,9 +44,24 @@ const ApiFirecrawlBackfillRoute = ApiFirecrawlBackfillRouteImport.update({
   path: '/api/firecrawl-backfill',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AdminPollsRoute = AdminPollsRouteImport.update({
-  id: '/admin/polls',
-  path: '/admin/polls',
+const ApiFirecrawlDetailsRoute = ApiFirecrawlDetailsRouteImport.update({
+  id: '/api/firecrawl-details',
+  path: '/api/firecrawl-details',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PollsIndexRoute = PollsIndexRouteImport.update({
+  id: '/polls/',
+  path: '/polls/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PollsSlugRoute = PollsSlugRouteImport.update({
+  id: '/polls/$slug',
+  path: '/polls/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RestaurantIdRoute = RestaurantIdRouteImport.update({
+  id: '/restaurant/$id',
+  path: '/restaurant/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
 
@@ -149,11 +149,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/terms': {
-      id: '/terms'
-      path: '/terms'
-      fullPath: '/terms'
-      preLoaderRoute: typeof TermsRouteImport
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/privacy': {
@@ -163,39 +163,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PrivacyRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+    '/terms': {
+      id: '/terms'
+      path: '/terms'
+      fullPath: '/terms'
+      preLoaderRoute: typeof TermsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/polls/': {
-      id: '/polls/'
-      path: '/polls'
-      fullPath: '/polls/'
-      preLoaderRoute: typeof PollsIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/restaurant/$id': {
-      id: '/restaurant/$id'
-      path: '/restaurant/$id'
-      fullPath: '/restaurant/$id'
-      preLoaderRoute: typeof RestaurantIdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/polls/$slug': {
-      id: '/polls/$slug'
-      path: '/polls/$slug'
-      fullPath: '/polls/$slug'
-      preLoaderRoute: typeof PollsSlugRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/firecrawl-details': {
-      id: '/api/firecrawl-details'
-      path: '/api/firecrawl-details'
-      fullPath: '/api/firecrawl-details'
-      preLoaderRoute: typeof ApiFirecrawlDetailsRouteImport
+    '/admin/polls': {
+      id: '/admin/polls'
+      path: '/admin/polls'
+      fullPath: '/admin/polls'
+      preLoaderRoute: typeof AdminPollsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/firecrawl-backfill': {
@@ -205,11 +184,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiFirecrawlBackfillRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/admin/polls': {
-      id: '/admin/polls'
-      path: '/admin/polls'
-      fullPath: '/admin/polls'
-      preLoaderRoute: typeof AdminPollsRouteImport
+    '/api/firecrawl-details': {
+      id: '/api/firecrawl-details'
+      path: '/api/firecrawl-details'
+      fullPath: '/api/firecrawl-details'
+      preLoaderRoute: typeof ApiFirecrawlDetailsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/polls/': {
+      id: '/polls/'
+      path: '/polls'
+      fullPath: '/polls/'
+      preLoaderRoute: typeof PollsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/polls/$slug': {
+      id: '/polls/$slug'
+      path: '/polls/$slug'
+      fullPath: '/polls/$slug'
+      preLoaderRoute: typeof PollsSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/restaurant/$id': {
+      id: '/restaurant/$id'
+      path: '/restaurant/$id'
+      fullPath: '/restaurant/$id'
+      preLoaderRoute: typeof RestaurantIdRouteImport
       parentRoute: typeof rootRouteImport
     }
   }

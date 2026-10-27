@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { Trash2, Lock, Sparkles } from "lucide-react";
-import { backfillRestaurantDetails } from "@/server/places.functions";
+import { backfillRestaurantDetails } from "@/lib/places.functions";
 
 export const Route = createFileRoute("/admin/polls")({
   component: AdminPolls,
