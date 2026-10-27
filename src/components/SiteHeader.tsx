@@ -4,7 +4,7 @@ import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Home, LogOut, Vote } from "lucide-react";
-import logoUrl from "@/assets/atl-halal-eats-logo.png";
+import logoUrl from "@/assets/atl-halal-eats-logo.webp";
 
 export function SiteHeader() {
   const { user, signInWithGoogle, signOut, loading } = useAuth();
