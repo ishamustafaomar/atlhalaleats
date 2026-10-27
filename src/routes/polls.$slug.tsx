@@ -12,9 +12,28 @@ import {
   ArrowLeft,
   X,
   Calendar,
+  Search,
+  Plus,
 } from "lucide-react";
 
 export const Route = createFileRoute("/polls/$slug")({
+  head: () => ({
+    meta: [
+      { title: "Weekly Poll — ATL Halal Eats" },
+      {
+        name: "description",
+        content:
+          "Rank your favorite Atlanta halal spots in this week's community poll — ranked-choice voting, live results.",
+      },
+      { property: "og:title", content: "Weekly Poll — ATL Halal Eats" },
+      {
+        property: "og:description",
+        content: "Rank your favorite Atlanta halal spots in this week's community poll.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
   component: PollDetail,
   notFoundComponent: () => (
     <div className="max-w-md mx-auto py-20 text-center">
@@ -64,6 +83,8 @@ function PollDetail() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [tab, setTab] = useState<"vote" | "results">("vote");
+  const [allRestaurants, setAllRestaurants] = useState<Restaurant[]>([]);
+  const [nomQuery, setNomQuery] = useState("");
 
   useEffect(() => {
     let cancelled = false;
