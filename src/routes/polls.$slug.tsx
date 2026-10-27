@@ -110,13 +110,21 @@ function PollDetail() {
         .select("id,name,cuisine,note,avg_rating,review_count,logo_url,photo_urls")
         .order("avg_rating", { ascending: false });
       if (cancelled) return;
+      setAllRestaurants((allRestaurants ?? []) as Restaurant[]);
 
       const cuisineTerm = (p.cuisine ?? "").trim().toLowerCase();
+      // Dish-specific keywords only — generic terms like "halal" or
+      // "mediterranean" match nearly the whole directory and push actual
+      // dish spots out of the shortlist.
       const relatedKeywords: Record<string, string[]> = {
-        shawarma: ["shawarma", "mediterranean", "halal", "arab", "lebanese", "syrian", "turkish", "kebab", "yemen", "persian"],
-        biryani: ["biryani", "indian", "pakistani", "halal", "hyderabad"],
-        kebab: ["kebab", "turkish", "persian", "mediterranean", "halal", "arab"],
-        mediterranean: ["mediterranean", "lebanese", "greek", "halal", "arab"],
+        shawarma: ["shawarma", "shwarma", "shawerma"],
+        biryani: ["biryani", "briyani", "hyderabadi"],
+        kebab: ["kebab", "kabab", "kabob", "koobideh"],
+        burger: ["burger"],
+        wings: ["wings"],
+        pizza: ["pizza"],
+        fried chicken: ["fried chicken", "chicken fingers", "tenders"],
+        tacos: ["taco"],
       };
       const keywords = (relatedKeywords[cuisineTerm] ?? [cuisineTerm]).filter(Boolean);
       const matches = (allRestaurants ?? []).filter((r) => {
