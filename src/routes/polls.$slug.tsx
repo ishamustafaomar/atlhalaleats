@@ -123,7 +123,7 @@ function PollDetail() {
         burger: ["burger"],
         wings: ["wings"],
         pizza: ["pizza"],
-        fried chicken: ["fried chicken", "chicken fingers", "tenders"],
+        "fried chicken": ["fried chicken", "chicken fingers", "tenders"],
         tacos: ["taco"],
       };
       const keywords = (relatedKeywords[cuisineTerm] ?? [cuisineTerm]).filter(Boolean);
